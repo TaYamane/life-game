@@ -1,0 +1,379 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================
+   カラー変数
+============================================================ */
+:root {
+  --color-bg:       #08061a;
+  --color-panel:    #12103a;
+  --color-border:   #3a2480;
+  --color-gold:     #ffcc00;
+  --color-text:     #e8e0ff;
+  --color-green:    #00e864;
+  --color-red:      #ff2844;
+  --color-blue:     #4488ff;
+  --color-cyan:     #00e0ff;
+  --color-purple:   #cc44ff;
+}
+
+/* ============================================================
+   レスポンシブ設計変数（モバイルファースト・clamp使用）
+   - 320px(iPhone SE)〜430px+(Android大型)に対応
+   - 固定pxを廃止しビューポート幅に応じて自動調整
+============================================================ */
+:root {
+  /* ── ボードマス サイズ ── */
+  --sq-normal:  clamp(22px, 5.8vw, 30px);   /* 320→22  390→23  430→25  520→30 */
+  --sq-lm:      clamp(27px, 7vw,   38px);    /* 320→27  390→27  430→30  540→38 */
+  --sq-special: clamp(34px, 8.8vw, 44px);   /* 320→34  390→34  430→38  500→44 */
+
+  /* ── ゾーンパネル 高さ ── */
+  --zone-sky-h: clamp(48px, 13vw,  88px);   /* 320→48  390→51  430→56  677→88 */
+
+  /* ── フォントスケール ── */
+  --fs-2xs: clamp(6.5px, 1.9vw,  8.5px);    /* 読みやすい極小テキスト用 */
+  --fs-xs:  clamp(8px,   2.3vw,  10px);
+  --fs-sm:  clamp(9px,   2.5vw,  11px);
+  --fs-md:  clamp(10px,  2.8vw,  13px);
+  --fs-lg:  clamp(12px,  3.3vw,  16px);
+  --fs-xl:  clamp(14px,  3.9vw,  20px);
+  --fs-2xl: clamp(17px,  4.8vw,  26px);
+
+  /* ── タッチターゲット 最小高さ ── */
+  --touch-h: clamp(44px, 11.5vw, 54px);     /* iOS HIG 44px最小準拠 */
+
+  /* ── スペーシング ── */
+  --sp-1: clamp(3px,  0.8vw,  5px);
+  --sp-2: clamp(5px,  1.3vw,  8px);
+  --sp-3: clamp(8px,  2vw,    11px);
+  --sp-4: clamp(10px, 2.5vw,  14px);
+  --sp-5: clamp(12px, 3vw,    18px);
+
+  /* ── プレイヤーカード ── */
+  --card-w:    clamp(44px, 12vw,  60px);
+  --avatar-sz: clamp(24px, 6.5vw, 32px);
+}
+
+/* ============================================================
+   ベース
+============================================================ */
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-family: 'DotGothic16', 'Noto Sans JP', monospace;
+  overscroll-behavior: none;
+  overflow-x: hidden;
+}
+
+::-webkit-scrollbar { width: 0; height: 0; }
+
+/* ============================================================
+   レトロUI ユーティリティ
+============================================================ */
+
+/* ピクセルボーダー（ゴールド） */
+.pixel-border {
+  border: 3px solid var(--color-gold);
+  box-shadow:
+    0 0 0 1px #000 inset,
+    3px 3px 0 #7a5500,
+    0 0 12px rgba(255,204,0,0.2);
+}
+
+/* ピクセルボーダー（パープル） */
+.pixel-border-purple {
+  border: 3px solid var(--color-border);
+  box-shadow:
+    0 0 0 1px #000 inset,
+    3px 3px 0 #1a0a4a;
+}
+
+/* ピクセルボーダー（グリーン） */
+.pixel-border-green {
+  border: 3px solid var(--color-green);
+  box-shadow:
+    0 0 0 1px #000 inset,
+    3px 3px 0 #007a30,
+    0 0 12px rgba(0,232,100,0.2);
+}
+
+/* ピクセルボーダー（レッド） */
+.pixel-border-red {
+  border: 3px solid var(--color-red);
+  box-shadow:
+    0 0 0 1px #000 inset,
+    3px 3px 0 #800020,
+    0 0 12px rgba(255,40,68,0.2);
+}
+
+/* レトロテキストシャドウ */
+.retro-text {
+  text-shadow: 2px 2px 0 #000, -1px -1px 0 rgba(0,0,0,0.5);
+  letter-spacing: 0.05em;
+}
+
+/* ゲームボタン */
+.btn-retro {
+  -webkit-user-select: none;
+  user-select: none;
+  cursor: pointer;
+  transition: transform 0.06s, box-shadow 0.06s;
+}
+.btn-retro:active {
+  transform: translate(2px, 2px);
+  box-shadow: none !important;
+}
+
+/* タッチ操作ボタン（SetupScreenのアバター・色選択など） */
+.btn-touch {
+  cursor: pointer;
+  -webkit-user-select: none;
+  user-select: none;
+  /* 視覚サイズより広いタップ領域（疑似要素で拡張） */
+  position: relative;
+}
+.btn-touch::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  min-width:  44px;
+  min-height: 44px;
+  /* 中央配置でタップ領域を外側に拡張 */
+  top:  50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* ============================================================
+   モバイルファースト ユーティリティ
+============================================================ */
+/* 横スクロール禁止 */
+.no-overflow-x {
+  overflow-x: hidden;
+  max-width: 100vw;
+}
+
+/* セーフエリア対応パディング */
+.safe-bottom {
+  padding-bottom: max(var(--sp-4), env(safe-area-inset-bottom));
+}
+.safe-top {
+  padding-top: max(var(--sp-3), env(safe-area-inset-top));
+}
+
+/* スキャンライン（ゲーム画面風） */
+.scanlines::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 3px,
+    rgba(0,0,0,0.06) 3px,
+    rgba(0,0,0,0.06) 4px
+  );
+  pointer-events: none;
+  z-index: 100;
+}
+
+/* ============================================================
+   アニメーション定義
+============================================================ */
+
+/* ルーレット: 数字ロール */
+@keyframes rouletteRoll {
+  0%   { transform: translateY(0) scale(1);    opacity: 1; }
+  20%  { transform: translateY(-4px) scale(1.05); }
+  40%  { transform: translateY(0) scale(0.95); }
+  60%  { transform: translateY(3px) scale(1.03); }
+  80%  { transform: translateY(-2px) scale(1); }
+  100% { transform: translateY(0) scale(1);    opacity: 1; }
+}
+
+/* ルーレット停止 */
+@keyframes rouletteLand {
+  0%   { transform: scale(1.3); color: var(--color-gold); }
+  30%  { transform: scale(0.9); }
+  60%  { transform: scale(1.15); }
+  80%  { transform: scale(0.97); }
+  100% { transform: scale(1); }
+}
+
+/* 光のフラッシュ */
+@keyframes lightFlash {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.2; }
+}
+
+/* コマホップ */
+@keyframes pieceHop {
+  0%   { transform: translateY(0) scale(1); }
+  40%  { transform: translateY(-10px) scale(1.3); }
+  70%  { transform: translateY(-2px) scale(0.95); }
+  100% { transform: translateY(0) scale(1); }
+}
+
+/* コマ着地エフェクト */
+@keyframes pieceLand {
+  0%   { transform: scale(1); box-shadow: 0 0 0 0 rgba(255,204,0,0.8); }
+  30%  { transform: scale(1.4); box-shadow: 0 0 0 8px rgba(255,204,0,0.4); }
+  60%  { transform: scale(0.9); }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255,204,0,0); }
+}
+
+/* カードめくり(表面) */
+@keyframes cardFlipIn {
+  0%   { transform: rotateY(90deg); opacity: 0; }
+  100% { transform: rotateY(0deg); opacity: 1; }
+}
+
+/* カードシャッフル */
+@keyframes cardShuffle {
+  0%,100% { transform: rotate(0deg) scale(1); }
+  20%  { transform: rotate(-3deg) scale(1.02); }
+  40%  { transform: rotate(3deg) scale(0.99); }
+  60%  { transform: rotate(-2deg) scale(1.01); }
+  80%  { transform: rotate(1deg) scale(1); }
+}
+
+/* レア演出: 輝き */
+@keyframes rareGlow {
+  0%,100% { box-shadow: 0 0 8px rgba(255,204,0,0.5), 0 0 20px rgba(255,204,0,0.2); }
+  50%      { box-shadow: 0 0 20px rgba(255,204,0,0.9), 0 0 40px rgba(255,204,0,0.5); }
+}
+
+/* 伝説演出: レインボー */
+@keyframes legendaryGlow {
+  0%   { box-shadow: 0 0 20px #ff2844, 0 0 40px #ff284466; filter: hue-rotate(0deg); }
+  33%  { box-shadow: 0 0 20px #ffcc00, 0 0 40px #ffcc0066; }
+  66%  { box-shadow: 0 0 20px #00e864, 0 0 40px #00e86466; }
+  100% { box-shadow: 0 0 20px #4488ff, 0 0 40px #4488ff66; filter: hue-rotate(360deg); }
+}
+
+/* スライドアップ */
+@keyframes slideUp {
+  0%   { transform: translateY(30px); opacity: 0; }
+  100% { transform: translateY(0);    opacity: 1; }
+}
+
+/* ポップイン */
+@keyframes popIn {
+  0%   { transform: scale(0.3); opacity: 0; }
+  60%  { transform: scale(1.1); opacity: 1; }
+  80%  { transform: scale(0.95); }
+  100% { transform: scale(1); }
+}
+
+/* テキストブリンク（8bit風） */
+@keyframes blink {
+  0%, 49% { opacity: 1; }
+  50%,100% { opacity: 0; }
+}
+
+/* 流れる光 */
+@keyframes scanLight {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(300%); }
+}
+
+/* ============================================================
+   アニメーションクラス
+============================================================ */
+/* ============================================================
+   ゲーム画面 新UIアニメーション
+============================================================ */
+
+/* マスのハイライトパルス */
+@keyframes squarePulse {
+  0%, 100% { box-shadow: 0 0 6px var(--color-gold); }
+  50%       { box-shadow: 0 0 18px var(--color-gold), 0 0 30px rgba(255,204,0,0.3); }
+}
+/* 道路コネクターの流れ */
+@keyframes roadFlow {
+  0%   { opacity: 0.1; }
+  50%  { opacity: 0.4; }
+  100% { opacity: 0.1; }
+}
+/* キャラ着地バウンス */
+@keyframes charLand {
+  0%   { transform: translateY(-8px) scale(1.15); }
+  40%  { transform: translateY(2px)  scale(0.95); }
+  70%  { transform: translateY(-3px) scale(1.05); }
+  100% { transform: translateY(0)    scale(1); }
+}
+/* 資産増加フラッシュ */
+@keyframes moneyFlash {
+  0%   { color: var(--color-green); transform: scale(1); }
+  30%  { color: #fff;               transform: scale(1.2); }
+  100% { color: var(--color-green); transform: scale(1); }
+}
+/* 資産減少フラッシュ */
+@keyframes moneyLoss {
+  0%   { color: var(--color-red); transform: scale(1); }
+  30%  { color: #fff;             transform: scale(1.1); }
+  100% { color: var(--color-red); transform: scale(1); }
+}
+
+.anim-square-pulse { animation: squarePulse 1.2s ease-in-out infinite; }
+.anim-char-land    { animation: charLand 0.5s ease-out forwards; }
+.anim-money-flash  { animation: moneyFlash 0.6s ease-out forwards; }
+.anim-money-loss   { animation: moneyLoss  0.6s ease-out forwards; }
+
+/* タイトル画面アニメーション */
+@keyframes titleGlow {
+  0%, 100% { text-shadow: 2px 2px 0 #000, 0 0 8px rgba(255,204,0,0.4), 0 0 20px rgba(255,204,0,0.15); }
+  50%       { text-shadow: 2px 2px 0 #000, 0 0 18px rgba(255,204,0,0.9), 0 0 40px rgba(255,204,0,0.4); }
+}
+@keyframes titleDiceBounce {
+  0%, 100% { transform: translateY(0) rotate(0deg) scale(1); }
+  20%       { transform: translateY(-10px) rotate(-8deg) scale(1.1); }
+  50%       { transform: translateY(-14px) rotate(5deg) scale(1.15); }
+  80%       { transform: translateY(-6px) rotate(-3deg) scale(1.05); }
+}
+@keyframes titleFlicker {
+  0%, 92%, 100% { opacity: 1; }
+  93%, 95%      { opacity: 0.6; }
+  94%, 96%      { opacity: 1; }
+  97%, 99%      { opacity: 0.8; }
+  98%           { opacity: 1; }
+}
+@keyframes titleDotPulse {
+  0%, 100% { transform: scale(1); opacity: 0.6; }
+  50%       { transform: scale(1.5); opacity: 1; }
+}
+@keyframes titleStarTwinkle {
+  0%, 100% { opacity: 0.15; transform: scale(0.8); }
+  50%       { opacity: 0.9; transform: scale(1.3); }
+}
+@keyframes titleSubBlink {
+  0%, 48%, 100% { opacity: 1; }
+  50%, 98%      { opacity: 0; }
+}
+
+.anim-title-glow    { animation: titleGlow 2.5s ease-in-out infinite; }
+.anim-title-dice    { animation: titleDiceBounce 3.5s ease-in-out infinite; }
+.anim-title-flicker { animation: titleFlicker 7s ease-in-out infinite; }
+.anim-title-dot     { animation: titleDotPulse 1.6s ease-in-out infinite; }
+.anim-title-star    { animation: titleStarTwinkle 2s ease-in-out infinite; }
+.anim-title-sub     { animation: titleSubBlink 1.2s step-end infinite; }
+
+.anim-roulette-roll  { animation: rouletteRoll 0.1s ease-in-out; }
+.anim-roulette-land  { animation: rouletteLand 0.5s ease-out forwards; }
+.anim-light-flash    { animation: lightFlash 0.3s ease-in-out infinite; }
+.anim-piece-hop      { animation: pieceHop 0.22s ease-out forwards; }
+.anim-piece-land     { animation: pieceLand 0.5s ease-out forwards; }
+.anim-card-flip-in   { animation: cardFlipIn 0.4s ease-out forwards; }
+.anim-card-shuffle   { animation: cardShuffle 0.6s ease-in-out; }
+.anim-rare-glow      { animation: rareGlow 1.2s ease-in-out infinite; }
+.anim-legendary      { animation: legendaryGlow 1.5s linear infinite; }
+.anim-slide-up       { animation: slideUp 0.3s ease-out forwards; }
+.anim-pop-in         { animation: popIn 0.4s ease-out forwards; }
+.anim-blink          { animation: blink 0.8s step-end infinite; }
