@@ -74,7 +74,8 @@ export function MultiplayerSetup({ myPlayerId, onGameStart, onBack }: Props) {
   const [mode, setMode]         = useState<"create" | "join" | null>(null);
   const [name, setName]         = useState("");
   const [avatar, setAvatar]     = useState<Avatar>({ emoji: "😎", color: "blue" });
-  const [joinCode, setJoinCode] = useState("");
+  const [joinCode, setJoinCode] = useState(""); // 正規化済みコード（参加処理に使用）
+  const [joinInput, setJoinInput] = useState(""); // 表示用 raw 値（IME 競合回避）
   const [fullWidthWarn, setFullWidthWarn] = useState(false);
   const [roomId, setRoomId]     = useState<string | null>(null);
   const [roomCode, setRoomCode] = useState("");
@@ -119,19 +120,22 @@ export function MultiplayerSetup({ myPlayerId, onGameStart, onBack }: Props) {
   }, [myPlayerId, name]);
 
   const handleJoinRoom = useCallback(async () => {
-    if (!name.trim())          { setError("名前を入力してください"); return; }
-    if (joinCode.length !== 6) { setError("6文字のコードを入力してください"); return; }
+    if (!name.trim()) { setError("名前を入力してください"); return; }
+    // 参加ボタン押下時に正規化（onBlur 未発火でも確実に変換）
+    const normalizedCode = normalizeRoomCode(joinInput);
+    if (normalizedCode.length !== 6) { setError("6文字のコードを入力してください"); return; }
+    setJoinCode(normalizedCode);
     setLoading(true); setError("");
-    const result = await joinRoom(joinCode, myPlayerId, name.trim());
+    const result = await joinRoom(normalizedCode, myPlayerId, name.trim());
     if (!result) { setError("ルームが見つかりません。コードを確認してください。"); setLoading(false); return; }
     setRoomId(result.id);
-    setRoomCode(joinCode.toUpperCase());
+    setRoomCode(normalizedCode);
     setIsHost(false);
     setPlayerIds(result.playerIds);
     setPlayerNames(result.playerNames);
     setStep("lobby");
     setLoading(false);
-  }, [myPlayerId, name, joinCode]);
+  }, [myPlayerId, name, joinInput]);
 
   const handleStartGame = useCallback(() => {
     if (!roomId || playerIds.length < 2) return;
@@ -206,14 +210,26 @@ export function MultiplayerSetup({ myPlayerId, onGameStart, onBack }: Props) {
       {mode === "join" && (
         <>
           <input
-            type="text" value={joinCode}
+            type="text"
+            value={joinInput}
             onChange={e => {
-              const raw = e.target.value;
-              const normalized = normalizeRoomCode(raw);
-              setFullWidthWarn(raw !== normalized && raw.length > 0);
-              setJoinCode(normalized);
+              // 入力中は値をそのまま保持（iOS IME との競合を防ぐ）
+              setJoinInput(e.target.value);
+              setFullWidthWarn(false);
             }}
-            placeholder="ルームコード (例: ABC123)" maxLength={6}
+            onBlur={e => {
+              // フォーカスが外れたタイミングで正規化
+              const normalized = normalizeRoomCode(e.target.value);
+              setJoinInput(normalized);
+              setJoinCode(normalized);
+              setFullWidthWarn(e.target.value !== normalized && e.target.value.length > 0);
+            }}
+            placeholder="ルームコード (例: ABC123)"
+            maxLength={8}
+            autoCapitalize="characters"
+            autoCorrect="off"
+            autoComplete="off"
+            spellCheck={false}
             className="w-full px-3 py-3 font-bold text-center tracking-widest outline-none"
             style={{ background: "#08041a", border: "2px solid #7c3aed", color: "#c084fc", fontSize: 22, letterSpacing: "0.3em" }}
           />
