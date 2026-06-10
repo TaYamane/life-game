@@ -74,9 +74,7 @@ export function MultiplayerSetup({ myPlayerId, onGameStart, onBack }: Props) {
   const [mode, setMode]         = useState<"create" | "join" | null>(null);
   const [name, setName]         = useState("");
   const [avatar, setAvatar]     = useState<Avatar>({ emoji: "😎", color: "blue" });
-  const [joinCode, setJoinCode] = useState(""); // 正規化済みコード（参加処理に使用）
-  const [joinInput, setJoinInput] = useState(""); // 表示用 raw 値（IME 競合回避）
-  const [fullWidthWarn, setFullWidthWarn] = useState(false);
+  const [joinInput, setJoinInput] = useState("");
   const [roomId, setRoomId]     = useState<string | null>(null);
   const [roomCode, setRoomCode] = useState("");
   const [isHost, setIsHost]     = useState(false);
@@ -121,15 +119,13 @@ export function MultiplayerSetup({ myPlayerId, onGameStart, onBack }: Props) {
 
   const handleJoinRoom = useCallback(async () => {
     if (!name.trim()) { setError("名前を入力してください"); return; }
-    // 参加ボタン押下時に正規化（onBlur 未発火でも確実に変換）
-    const normalizedCode = normalizeRoomCode(joinInput);
-    if (normalizedCode.length !== 6) { setError("6文字のコードを入力してください"); return; }
-    setJoinCode(normalizedCode);
+    const code = normalizeRoomCode(joinInput);
+    if (code.length !== 6) { setError("6文字のコードを入力してください"); return; }
     setLoading(true); setError("");
-    const result = await joinRoom(normalizedCode, myPlayerId, name.trim());
+    const result = await joinRoom(code, myPlayerId, name.trim());
     if (!result) { setError("ルームが見つかりません。コードを確認してください。"); setLoading(false); return; }
     setRoomId(result.id);
-    setRoomCode(normalizedCode);
+    setRoomCode(code);
     setIsHost(false);
     setPlayerIds(result.playerIds);
     setPlayerNames(result.playerNames);
@@ -212,18 +208,7 @@ export function MultiplayerSetup({ myPlayerId, onGameStart, onBack }: Props) {
           <input
             type="text"
             value={joinInput}
-            onChange={e => {
-              // 入力中は値をそのまま保持（iOS IME との競合を防ぐ）
-              setJoinInput(e.target.value);
-              setFullWidthWarn(false);
-            }}
-            onBlur={e => {
-              // フォーカスが外れたタイミングで正規化
-              const normalized = normalizeRoomCode(e.target.value);
-              setJoinInput(normalized);
-              setJoinCode(normalized);
-              setFullWidthWarn(e.target.value !== normalized && e.target.value.length > 0);
-            }}
+            onChange={e => setJoinInput(e.target.value)}
             placeholder="ルームコード (例: ABC123)"
             maxLength={8}
             autoCapitalize="characters"
@@ -233,11 +218,6 @@ export function MultiplayerSetup({ myPlayerId, onGameStart, onBack }: Props) {
             className="w-full px-3 py-3 font-bold text-center tracking-widest outline-none"
             style={{ background: "#08041a", border: "2px solid #7c3aed", color: "#c084fc", fontSize: 22, letterSpacing: "0.3em" }}
           />
-          {fullWidthWarn && (
-            <div style={{ color: "var(--color-gold)", fontSize: 11, marginTop: -8 }}>
-              ⚠ 全角文字を半角に自動変換しました
-            </div>
-          )}
         </>
       )}
 
