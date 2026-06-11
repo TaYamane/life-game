@@ -14,7 +14,7 @@ export interface CharacterDNA {
 }
 
 const DNA_HAIR = ["#2a1808","#3d2010","#1a1a1a","#7B3A10","#c8a050","#2a1855","#5a3020"];
-const DNA_SKIN = ["#f4c08a","#e8a870","#d4916a","#c07850","#f0d090"];
+const DNA_SKIN = ["#f8d4a0","#f4c28a","#f0bc80","#f2ca90","#e8b878"];
 const DNA_EYES = ["#1a1212","#2a1008","#1a2418","#201830"];
 
 export function generateDNA(playerId: string): CharacterDNA {
