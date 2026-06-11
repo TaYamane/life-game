@@ -10,6 +10,7 @@ import { isSupabaseConfigured } from "@/lib/supabase";
 
 interface Props {
   myPlayerId:   string;
+  defaultMode?: "create" | "join"; // タイトル画面から直接モードを指定する場合に使用
   onGameStart: (params: {
     roomId:       string;
     playerIds:    string[];
@@ -69,9 +70,10 @@ function AvatarPicker({ avatar, onChange }: { avatar: Avatar; onChange: (a: Avat
   );
 }
 
-export function MultiplayerSetup({ myPlayerId, onGameStart, onBack }: Props) {
-  const [step, setStep]         = useState<Step>("menu");
-  const [mode, setMode]         = useState<"create" | "join" | null>(null);
+export function MultiplayerSetup({ myPlayerId, defaultMode, onGameStart, onBack }: Props) {
+  // defaultMode が指定されていれば menu をスキップして name ステップから開始
+  const [step, setStep]         = useState<Step>(defaultMode ? "name" : "menu");
+  const [mode, setMode]         = useState<"create" | "join" | null>(defaultMode ?? null);
   const [name, setName]         = useState("");
   const [avatar, setAvatar]     = useState<Avatar>({ emoji: "😎", color: "blue" });
   const [joinInput, setJoinInput] = useState("");
