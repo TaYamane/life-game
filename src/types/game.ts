@@ -72,6 +72,9 @@ export interface AvatarCustomization {
 export type JobType =
   | "none" | "part_time" | "salaryman" | "civil_servant"
   | "engineer" | "doctor" | "lawyer" | "youtuber" | "entrepreneur" | "freelancer" | "artist"
+  | "comedian"    // お笑い芸人
+  | "carpenter"   // 大工
+  | "baseball"    // 野球選手
   // ── 隠し職業（特定条件を満たしたプレイヤーのみ解放） ──
   | "inventor"       // 発明家
   | "investor"       // 投資家
@@ -92,6 +95,9 @@ export const JOB_LABELS: Record<JobType, string> = {
   entrepreneur:   "経営者",
   freelancer:     "フリーランス",
   artist:         "アーティスト",
+  comedian:       "お笑い芸人",
+  carpenter:      "大工",
+  baseball:       "野球選手",
   // 隠し職業
   inventor:       "発明家",
   investor:       "投資家",
@@ -113,6 +119,9 @@ export const JOB_INCOME: Record<JobType, number> = {
   entrepreneur:    0,
   freelancer:     60,
   artist:         30,
+  comedian:       40,
+  carpenter:      55,
+  baseball:      100,
   // 隠し職業
   inventor:      180,
   investor:      300,

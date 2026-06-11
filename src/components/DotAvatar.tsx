@@ -79,6 +79,9 @@ function getJobBadge(job: JobType): string | null {
     youtuber:       "📹",
     freelancer:     "🖥️",
     part_time:      "🏷️",
+    comedian:       "🎭",
+    carpenter:      "🔨",
+    baseball:       "⚾",
     // 隠し職業
     inventor:       "⚙️",
     investor:       "💎",

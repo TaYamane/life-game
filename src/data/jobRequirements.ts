@@ -30,6 +30,9 @@ export const JOB_EMOJI: Record<JobType, string> = {
   entrepreneur:   "🚀",
   freelancer:     "🌊",
   artist:         "🎨",
+  comedian:       "🎭",
+  carpenter:      "🔨",
+  baseball:       "⚾",
   // 隠し職業
   inventor:       "⚙️",
   investor:       "💎",
@@ -52,6 +55,9 @@ export const JOB_INCOME_LABEL: Record<JobType, string> = {
   entrepreneur:   "変動大",
   freelancer:     "中〜高",
   artist:         "低〜中",
+  comedian:       "低〜超高（ブレイク次第）",
+  carpenter:      "中（安定・実力給）",
+  baseball:       "低〜超高（プロ次第）",
   // 隠し職業
   inventor:       "高（特許収入）",
   investor:       "超高（複利）",
@@ -85,6 +91,12 @@ export const JOB_DESCRIPTIONS: Record<JobType, string> = {
     "フリーランス。自由な働き方。収入は実力と実績次第。",
   artist:
     "アーティスト。創造的な仕事で充実感が高い。収入は不安定なことが多い。",
+  comedian:
+    "お笑い芸人。笑いで世界を救う職業。ブレイクすれば大金持ちだが、そこまでが長い道のり。",
+  carpenter:
+    "大工。腕一本で生きる職人。資格と現場経験が収入に直結する、堅実で誇り高い仕事。",
+  baseball:
+    "野球選手。幼い頃から磨いてきた才能でプロの世界へ。体力と精神力の限界に挑む短い黄金期。",
   // 隠し職業
   inventor:
     "人類の未来を変える発明で特許を量産。技術と起業経験を持つ者だけが辿り着ける道。",
@@ -113,6 +125,9 @@ export const JOB_INITIAL_BONUS: Record<JobType, { money: number; happiness: numb
   entrepreneur:   { money: -100, happiness: 25, fame: 10 },
   freelancer:     { money: 20,   happiness: 20, fame: 5  },
   artist:         { money: 10,   happiness: 30, fame: 10 },
+  comedian:       { money: -20,  happiness: 35, fame: 20 },
+  carpenter:      { money: 40,   happiness: 20, fame: 2  },
+  baseball:       { money: 100,  happiness: 40, fame: 30 },
   // 隠し職業（特別ボーナス）
   inventor:       { money: 300,  happiness: 30, fame: 25 },
   investor:       { money: 500,  happiness: 20, fame: 30 },
@@ -135,6 +150,9 @@ export const JOB_CAREER_STORIES: Record<JobType, string> = {
   entrepreneur:   "退路を断って起業。リスクを恐れず、夢に向かって走り始めた。",
   freelancer:     "組織を離れ、フリーランスとして独立した。自由と引き換えに自己責任の世界が待っている。",
   artist:         "アーティストとして本格的に創作活動を始めた。好きを仕事にする覚悟を決めた。",
+  comedian:       "初めてマイクを握り、舞台に立った。笑いで人生を切り拓く覚悟だ。ウケるかどうかは神のみぞ知る。",
+  carpenter:      "木の匂いと道具の感触。職人の道を歩み始めた。腕が全てを語る世界に飛び込んだ。",
+  baseball:       "プロのユニフォームに袖を通した瞬間、子供の頃の夢が現実になった。グラウンドに人生を捧げる。",
   // 隠し職業
   inventor:       "累積した技術と起業経験が結実した。特許を次々と生み出す発明家への道が開かれた。世界を変える何かが、すでに頭の中にある。",
   investor:       "資産が資産を呼ぶ領域に踏み込んだ。もう労働で稼ぐ必要はない。お金の流れを支配する側に回った瞬間だ。",
@@ -152,9 +170,9 @@ export const CAREER_TRIGGER_LABELS: Record<CareerTrigger, string> = {
 };
 
 // ── 各トリガーで表示する職業リスト ───────────────────────────
-const FIRST_JOB_LIST:   JobType[] = ["salaryman", "civil_servant", "engineer", "doctor", "lawyer", "youtuber", "freelancer", "artist"];
-const TRANSFER_LIST:    JobType[] = ["salaryman", "civil_servant", "engineer", "youtuber", "freelancer", "artist", "entrepreneur"];
-const LATE_CAREER_LIST: JobType[] = ["salaryman", "civil_servant", "engineer", "doctor", "lawyer", "youtuber", "entrepreneur", "freelancer", "artist"];
+const FIRST_JOB_LIST:   JobType[] = ["salaryman", "civil_servant", "engineer", "doctor", "lawyer", "youtuber", "freelancer", "artist", "comedian", "carpenter", "baseball"];
+const TRANSFER_LIST:    JobType[] = ["salaryman", "civil_servant", "engineer", "youtuber", "freelancer", "artist", "entrepreneur", "comedian", "carpenter"];
+const LATE_CAREER_LIST: JobType[] = ["salaryman", "civil_servant", "engineer", "doctor", "lawyer", "youtuber", "entrepreneur", "freelancer", "artist", "comedian", "carpenter"];
 
 // ============================================================
 // 利用可能判定（メイン関数）
@@ -275,6 +293,44 @@ export function checkJobAvailability(
           flags.scienceArts   === "arts",
         reason: pos < 40 ? "クリエイター活動はもう少し後から" : undefined,
       };
+
+    case "comedian":
+      return {
+        available:   pos >= 40,
+        recommended:
+          flags.clubActivity === "cultural" ||
+          flags.kidsActivity === "music",
+        reason: pos < 40 ? "まずは人生経験を積んでから（18歳以降）" : undefined,
+      };
+
+    case "carpenter": {
+      const hasVocational =
+        flags.highSchoolRoute === "vocational" ||
+        flags.lifeRoute       === "vocational_school" ||
+        flags.lifeRoute       === "work";
+      return {
+        available:   pos >= 50,
+        recommended: hasVocational,
+        reason:      pos < 50 ? "就職できる年齢になってから" : undefined,
+      };
+    }
+
+    case "baseball": {
+      const hasSports =
+        flags.clubActivity === "sports" ||
+        flags.kidsActivity === "sports";
+      return {
+        available:   pos >= 40 && pos < 90 && hasSports,
+        recommended: hasSports,
+        reason:      !hasSports
+          ? "スポーツ系の部活・習い事の経験が必要"
+          : pos >= 90
+            ? "プロ野球選手になれる年齢（35歳前）を過ぎています"
+            : pos < 40
+              ? "まだ早い。もう少し腕を磨いてから"
+              : undefined,
+      };
+    }
 
     // 隠し職業は checkJobAvailability では常に false（getHiddenJobOptions で別途判定）
     default:
