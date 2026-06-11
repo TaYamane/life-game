@@ -176,14 +176,14 @@ function TitleScreen({ onOffline, onOnline, onResume, hasSavedGame }: {
 type AppPhase = "title" | "offline_setup" | "offline_game" | "online_lobby" | "online_game";
 
 export default function Home() {
-  const [savedGame]               = useState<SaveData | null>(loadSaveData);
+  const [savedGame, setSavedGame] = useState<SaveData | null>(null);
   const [appPhase, setAppPhase]   = useState<AppPhase>("title");
   const [myPlayerId]              = useState(getOrCreatePlayerId);
   const [roomId, setRoomId]       = useState<string | null>(null);
   const [isHost, setIsHost]       = useState(false);
   const hasInitOnline             = useRef(false); // 初回同期フラグ
 
-  const { state, startGame, rollDice, dismissEvent, makeChoice, chooseCareer, endTurn, resetGame, setState } = useGameStore();
+  const { state, startGame, rollDice, dismissEvent, makeChoice, chooseCareer, endTurn, resetGame, setState, marriageRoll } = useGameStore();
 
   // ── オンライン同期フック ──────────────────────────
   const handleRemoteState = useCallback((s: GameState) => {
@@ -255,6 +255,11 @@ export default function Home() {
     setAppPhase("online_game");
   }, [startGame, setState]);
 
+  // ── マウント後にlocalStorageからセーブデータを読み込む（SSR回避）──
+  useEffect(() => {
+    setSavedGame(loadSaveData());
+  }, []);
+
   // ── オフラインゲーム状態をlocalStorageに自動セーブ ──
   useEffect(() => {
     if (appPhase !== "offline_game") return;
@@ -266,10 +271,11 @@ export default function Home() {
 
   // ── 続きから再開 ──────────────────────────────────
   const handleResume = useCallback(() => {
-    if (!savedGame) return;
-    setState(savedGame.state);
+    const save = loadSaveData(); // 常に最新値をlocalStorageから直接読む
+    if (!save) return;
+    setState(save.state);
     setAppPhase("offline_game");
-  }, [savedGame, setState]);
+  }, [setState]);
 
   // ── リセット（セーブデータも削除）────────────────
   const handleReset = useCallback(() => {
@@ -316,6 +322,12 @@ export default function Home() {
     pendingSyncRef.current = true;
     chooseCareer(job);
   }, [myPlayerId, chooseCareer]);
+
+  const onlineMarriageRoll = useCallback((value: number) => {
+    if (currentPlayerIdRef.current !== myPlayerId) return;
+    pendingSyncRef.current = true;
+    marriageRoll(value);
+  }, [myPlayerId, marriageRoll]);
 
   const onlineEndTurn = useCallback(() => {
     if (currentPlayerIdRef.current !== myPlayerId) return;
@@ -367,6 +379,7 @@ export default function Home() {
         onDismissEvent={appPhase === "online_game" ? onlineDismissEvent : dismissEvent}
         onMakeChoice={appPhase === "online_game" ? onlineMakeChoice : makeChoice}
         onChooseCareer={appPhase === "online_game" ? onlineChooseCareer : chooseCareer}
+        onMarriageRoll={appPhase === "online_game" ? onlineMarriageRoll : marriageRoll}
         onEndTurn={appPhase === "online_game" ? onlineEndTurn : endTurn}
         isMyTurn={isMyTurn}
       />

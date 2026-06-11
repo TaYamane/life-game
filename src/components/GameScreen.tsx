@@ -28,6 +28,7 @@ interface Props {
   onDismissEvent:   () => void;
   onMakeChoice?:    (optionId: string) => void;
   onChooseCareer?:  (job: JobType) => void;
+  onMarriageRoll?:  (value: number) => void;
   onEndTurn:        () => void;
   isMyTurn?:        boolean;
 }
@@ -253,7 +254,7 @@ function TurnResultBanner({ diceValue, player, onEndTurn, isMyTurn }: {
 // ============================================================
 // メインゲーム画面
 // ============================================================
-export function GameScreen({ state, onRollDice, onDismissEvent, onMakeChoice, onChooseCareer, onEndTurn, isMyTurn = true }: Props) {
+export function GameScreen({ state, onRollDice, onDismissEvent, onMakeChoice, onChooseCareer, onMarriageRoll, onEndTurn, isMyTurn = true }: Props) {
   const { players, currentPlayerIndex, phase, diceValue, currentEvent, currentChoice } = state;
 
   // プロフィールパネル（null = 非表示、player index = 表示）
@@ -344,14 +345,21 @@ export function GameScreen({ state, onRollDice, onDismissEvent, onMakeChoice, on
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storePos]);
 
+  // 結婚ルーレット完了コールバック
+  const handleMarriageComplete = useCallback((value: number) => {
+    if (!isMyTurn) return;
+    onMarriageRoll?.(value);
+  }, [isMyTurn, onMarriageRoll]);
+
   // アニメーション中はモーダルを表示しない
-  const showEventModal   = phase === "event"         && !isMoving;
-  const showChoiceModal  = phase === "choice"        && !isMoving && !!currentChoice;
-  const showCareerModal  = phase === "career_choice" && !isMoving && !!state.currentCareerChoice;
-  const showResultBanner = phase === "show_result" && !isMoving;
-  const showRoulette = phase === "playing"  && isMyTurn;
-  const isSpinning   = phase === "rolling"  && isMyTurn;
-  const isWaiting    = !isMyTurn && (phase === "playing" || phase === "rolling");
+  const showEventModal      = phase === "event"            && !isMoving;
+  const showChoiceModal     = phase === "choice"           && !isMoving && !!currentChoice;
+  const showCareerModal     = phase === "career_choice"    && !isMoving && !!state.currentCareerChoice;
+  const showMarriageRoulette = phase === "marriage_roulette" && !isMoving;
+  const showResultBanner    = phase === "show_result" && !isMoving;
+  const showRoulette  = phase === "playing"  && isMyTurn;
+  const isSpinning    = phase === "rolling"  && isMyTurn;
+  const isWaiting     = !isMyTurn && (phase === "playing" || phase === "rolling");
 
   return (
     <div
@@ -568,6 +576,75 @@ export function GameScreen({ state, onRollDice, onDismissEvent, onMakeChoice, on
           onChoose={onChooseCareer ?? (() => {})}
           isMyTurn={isMyTurn}
         />
+      )}
+
+      {/* ===== 結婚ルーレットモーダル ===== */}
+      {showMarriageRoulette && (
+        <div
+          className="absolute inset-0 z-40 flex flex-col"
+          style={{ background: "rgba(4,2,20,0.96)", overflowY: "auto" }}
+        >
+          <div className="flex flex-col items-center px-5 pt-8 pb-6 gap-4">
+            {/* タイトル */}
+            <div className="text-center">
+              <div style={{ fontSize: 44 }}>💒</div>
+              <div
+                className="font-bold retro-text mt-2"
+                style={{ color: "var(--color-gold)", fontSize: 18, letterSpacing: "0.08em" }}
+              >
+                結婚の運命を試せ！
+              </div>
+              {state.marriageRoulette?.hasPartner ? (
+                <div style={{ color: "#c084fc", fontSize: 12, marginTop: 6 }}>
+                  ♥ 想い人がいる → <span style={{ color: "var(--color-green)", fontWeight: "bold" }}>4/6 で成功</span>
+                </div>
+              ) : (
+                <div style={{ color: "#8070a0", fontSize: 12, marginTop: 6 }}>
+                  まだ出会いが少ない → <span style={{ color: "#ff8c00", fontWeight: "bold" }}>2/6 で成功</span>
+                </div>
+              )}
+              {/* 確率インジケーター */}
+              <div className="flex gap-1 justify-center mt-3">
+                {[1,2,3,4,5,6].map(n => {
+                  const threshold = state.marriageRoulette?.hasPartner ? 4 : 2;
+                  const isSuccess = n <= threshold;
+                  return (
+                    <div
+                      key={n}
+                      style={{
+                        width: 28, height: 28,
+                        borderRadius: 4,
+                        background: isSuccess ? "var(--color-green)" : "#2a1060",
+                        border: isSuccess ? "2px solid #00e864" : "2px solid #3a2060",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        color: isSuccess ? "#000" : "#4a3080",
+                        fontSize: 13, fontWeight: "bold",
+                        fontFamily: "'DotGothic16',monospace",
+                      }}
+                    >
+                      {n}
+                    </div>
+                  );
+                })}
+              </div>
+              <div style={{ color: "#4a3880", fontSize: 10, marginTop: 4 }}>
+                {state.marriageRoulette?.hasPartner ? "1〜4 = 結婚　5〜6 = 今回は縁がなかった" : "1〜2 = 結婚　3〜6 = 今回は縁がなかった"}
+              </div>
+            </div>
+
+            {/* ルーレット（自分のターンのみ操作可） */}
+            {isMyTurn ? (
+              <Roulette onComplete={handleMarriageComplete} />
+            ) : (
+              <div
+                className="w-full py-6 text-center font-bold retro-text anim-blink"
+                style={{ color: "#4a3880", fontSize: 14, border: "2px solid #2a1060" }}
+              >
+                ● {currentPlayer.name} が運命のルーレットを回しています…
+              </div>
+            )}
+          </div>
+        </div>
       )}
 
       {/* ===== プロフィールパネル ===== */}

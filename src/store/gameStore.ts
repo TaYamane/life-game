@@ -43,7 +43,7 @@ function calcLifeStage(p: Player): LifeStage {
   return "baby";
 }
 
-function makeHistoryEntry(event: GameEvent, turnCount: number, position: number): HistoryEntry | null {
+function makeHistoryEntry(event: GameEvent, turnCount: number, position: number, isMarried: boolean): HistoryEntry | null {
   const e   = event.effect;
   const age = posToAge(position);
   if (event.isCallback)        return { emoji: "🔮", text: `【伏線回収】${event.title}`, turn: turnCount, age };
@@ -52,7 +52,7 @@ function makeHistoryEntry(event: GameEvent, turnCount: number, position: number)
   if (e.divorce)     return { emoji: "💔", text: "離婚した",         turn: turnCount, age };
   if (e.getPet)      return { emoji: "🐾", text: "ペットを迎えた",   turn: turnCount, age };
   if (e.losePet)     return { emoji: "😢", text: "ペットとお別れ…", turn: turnCount, age };
-  if (e.getChild)    return { emoji: "👶", text: "子供が生まれた！", turn: turnCount, age };
+  if (e.getChild)    return { emoji: "👶", text: isMarried ? "子供が生まれた！" : "養子を迎えた！", turn: turnCount, age };
   if (e.startCompany)return { emoji: "🚀", text: "起業した",         turn: turnCount, age };
   if ((e.money ?? 0) >= 500)    return { emoji: "💰", text: event.title, turn: turnCount, age };
   if ((e.money ?? 0) <= -400)   return { emoji: "😱", text: event.title, turn: turnCount, age };
@@ -117,10 +117,42 @@ function applyEventEffect(player: Player, event: GameEvent): Player {
   if (p.money > p.peakMoney) p.peakMoney = p.money;
   p.lifeStage = calcLifeStage(p);
 
-  const entry = makeHistoryEntry(event, p.turnCount, p.position);
+  const entry = makeHistoryEntry(event, p.turnCount, p.position, p.isMarried);
   if (entry) p.history = [...p.history, entry];
 
   return p;
+}
+
+// ============================================================
+// ============================================================
+// 重要分岐マス（強制停止）定義
+// ============================================================
+/** マス番号 → "訪問済み" を示す flags キー */
+const MANDATORY_STOPS = new Map<number, string>([
+  [35,  "highSchoolRoute"],   // 高校受験
+  [50,  "lifeRoute"],         // 進路選択
+  [58,  "firstJobDone"],      // 就活（キャリア選択）
+  [79,  "marriageResolved"],  // 結婚ルーレット（専用フラグ）
+  [90,  "childChoice"],       // 子供選択
+  [96,  "startupChoice"],     // 起業チャンス
+  [118, "lateCareerDone"],    // キャリア再選択
+  [133, "retirementChoice"],  // 早期退職
+  [142, "seniorLifestyle"],   // 老後の生き方
+]);
+
+/**
+ * from+1〜to の間に未訪問の強制停止マスがあれば最初のマス番号を返す
+ * 既にフラグが立っているマス or 結婚済み（マス79）はスキップ
+ */
+function getFirstMandatoryStop(from: number, to: number, player: Player): number | null {
+  for (let pos = from + 1; pos <= to; pos++) {
+    if (!MANDATORY_STOPS.has(pos)) continue;
+    const flagKey = MANDATORY_STOPS.get(pos)!;
+    if (player.flags[flagKey] !== undefined) continue;       // 訪問済み
+    if (pos === 79 && player.isMarried)      continue;       // 既婚はルーレット不要
+    return pos;
+  }
+  return null;
 }
 
 // ============================================================
@@ -133,6 +165,7 @@ type Action =
   | { type: "DISMISS_EVENT" }
   | { type: "MAKE_CHOICE"; optionId: string }
   | { type: "CHOOSE_CAREER"; job: JobType }
+  | { type: "MARRIAGE_ROLL"; value: number }  // 結婚ルーレット結果
   | { type: "END_TURN" }
   | { type: "RESET_GAME" }
   | { type: "SET_STATE"; state: GameState };
@@ -207,7 +240,12 @@ function gameReducer(state: GameState, action: Action): GameState {
       if (state.phase !== "rolling") return state;
 
       const player      = state.players[state.currentPlayerIndex];
-      const newPosition = Math.min(player.position + action.value, TOTAL_SQUARES);
+
+      // ── 強制停止チェック ─────────────────────────────────────
+      const rawTarget   = Math.min(player.position + action.value, TOTAL_SQUARES);
+      const stopAt      = getFirstMandatoryStop(player.position, rawTarget, player);
+      const newPosition = stopAt !== null ? stopAt : rawTarget;
+
       const hasFinished = newPosition >= TOTAL_SQUARES && !player.hasFinished;
       const newFinished = hasFinished ? state.finishedCount + 1 : state.finishedCount;
       const square      = BOARD_SQUARES[newPosition];
@@ -313,6 +351,23 @@ function gameReducer(state: GameState, action: Action): GameState {
       const updatedPlayers = state.players.map((p, i) =>
         i === state.currentPlayerIndex ? updatedPlayer : p
       );
+
+      // ── 結婚ルーレット（マス79専用・未訪問かつ未婚のみ）──
+      if (!hasFinished && newPosition === 79 && !updatedPlayer.flags.marriageResolved && !updatedPlayer.isMarried) {
+        const hasPartner = updatedPlayer.flags.romanceChoice === "confess";
+        return {
+          ...state,
+          phase:             "marriage_roulette",
+          players:           updatedPlayers,
+          diceValue:         action.value,
+          isRolling:         false,
+          currentChoice:     null,
+          currentEvent:      null,
+          currentCareerChoice: null,
+          finishedCount:     newFinished,
+          marriageRoulette:  { hasPartner },
+        };
+      }
 
       // ── キャリア選択マス（マス58・マス118）──
       const CAREER_SQUARES: Record<number, CareerTrigger> = {
@@ -448,13 +503,16 @@ function gameReducer(state: GameState, action: Action): GameState {
         };
       }
 
+      // 養子フラグ: 未婚で子供を得る選択の場合はテキストを変える
+      const isAdoption = !!option.effect.getChild && !player.isMarried;
+
       // 選択結果をモーダルで表示するための表示専用イベント（効果は適用済み）
       const displayEvent: GameEvent = {
         id:            `choice_display_${choiceDef.flagKey}_${option.id}`,
         category:      "life",
-        title:         `${option.emoji} ${option.label}を選んだ！`,
-        story:         option.description,
-        result:        `「${option.label}」の選択がこれからの人生に刻まれた。あの時の決断がいつか返ってくる。`,
+        title:         isAdoption ? "👶 養子を迎えた！" : `${option.emoji} ${option.label}を選んだ！`,
+        story:         isAdoption ? "未婚だったが、愛情いっぱいに子供を迎え入れた。これからは二人三脚で歩んでいこう。" : option.description,
+        result:        isAdoption ? "一人でも家族を作る勇気ある決断。子供の笑顔が毎日の宝物になった。" : `「${option.label}」の選択がこれからの人生に刻まれた。あの時の決断がいつか返ってくる。`,
         effect:        {},
         emoji:         option.emoji,
         isPositive:    true,
@@ -530,7 +588,13 @@ function gameReducer(state: GameState, action: Action): GameState {
         fame:        clamp(0, player.fame      + bonus.fame,      100),
         wentBankrupt:  newMoney < 0 ? true : player.wentBankrupt,
         peakMoney:     Math.max(player.peakMoney, newMoney),
-        flags:         { ...player.flags, chosenCareer: job },
+        flags: {
+          ...player.flags,
+          chosenCareer: job,
+          // 強制停止済みフラグ（マス58=first_job, マス118=late_career）
+          ...(state.currentCareerChoice?.trigger === "first_job"  ? { firstJobDone:    job } : {}),
+          ...(state.currentCareerChoice?.trigger === "late_career" ? { lateCareerDone: job } : {}),
+        },
         firedCallbacks: player.firedCallbacks ?? [],
         lifeStage:     calcLifeStage({ ...player, position: player.position }),
         history: [
@@ -569,6 +633,60 @@ function gameReducer(state: GameState, action: Action): GameState {
         players:             updatedPlayers,
         currentCareerChoice: null,
         currentEvent:        displayEvent,
+      };
+    }
+
+    // ============================================================
+    // 結婚ルーレット結果処理
+    // ============================================================
+    case "MARRIAGE_ROLL": {
+      if (state.phase !== "marriage_roulette") return state;
+
+      const player     = state.players[state.currentPlayerIndex];
+      const hasPartner = state.marriageRoulette?.hasPartner ?? false;
+      // 成功閾値: 彼女あり = 4/6 (1〜4)、なし = 2/6 (1〜2)
+      const success = action.value <= (hasPartner ? 4 : 2);
+
+      // marriageResolved フラグを先に立てる
+      const updatedPlayer: Player = {
+        ...player,
+        flags: { ...player.flags, marriageResolved: success ? "married" : "skipped" },
+      };
+      const updatedPlayers = state.players.map((p, i) =>
+        i === state.currentPlayerIndex ? updatedPlayer : p
+      );
+
+      const resultEvent: GameEvent = success ? {
+        id:         "marriage_roulette_success",
+        category:   "love",
+        title:      "💒 結婚した！",
+        story:      hasPartner
+          ? "想い人との長い交際がついに実を結んだ。指輪を渡した瞬間、涙があふれた。"
+          : "運命的な出会いから電撃婚！周りを驚かせた素敵なサプライズ。",
+        result:     "人生最高の日！新しい人生の幕開けだ。",
+        effect:     { marry: true, happiness: 30 },
+        emoji:      "💍",
+        isPositive: true,
+      } : {
+        id:         "marriage_roulette_fail",
+        category:   "love",
+        title:      hasPartner ? "今はまだその時ではなかった…" : "まだ縁がなかった…",
+        story:      hasPartner
+          ? "告白の準備をしていたが、タイミングが合わなかった。いつかきっと。"
+          : "理想の相手に出会えなかった。でも人生はまだまだこれから。",
+        result:     "今回は縁がなかった。焦らなくていい。",
+        effect:     { happiness: -5 },
+        emoji:      "💔",
+        isPositive: false,
+      };
+
+      return {
+        ...state,
+        phase:            "event",
+        players:          updatedPlayers,
+        currentEvent:     resultEvent,
+        currentChoice:    null,
+        marriageRoulette: undefined,
       };
     }
 
@@ -619,9 +737,10 @@ export function useGameStore() {
   const dismissEvent  = useCallback(() => dispatch({ type: "DISMISS_EVENT" }), []);
   const makeChoice    = useCallback((optionId: string) => dispatch({ type: "MAKE_CHOICE", optionId }), []);
   const chooseCareer  = useCallback((job: JobType) => dispatch({ type: "CHOOSE_CAREER", job }), []);
-  const endTurn       = useCallback(() => dispatch({ type: "END_TURN"   }), []);
+  const endTurn      = useCallback(() => dispatch({ type: "END_TURN"   }), []);
   const resetGame    = useCallback(() => dispatch({ type: "RESET_GAME" }), []);
   const setState     = useCallback((s: GameState) => dispatch({ type: "SET_STATE", state: s }), []);
+  const marriageRoll = useCallback((value: number) => dispatch({ type: "MARRIAGE_ROLL", value }), []);
 
-  return { state, startGame, rollDice, dismissEvent, makeChoice, chooseCareer, endTurn, resetGame, setState };
+  return { state, startGame, rollDice, dismissEvent, makeChoice, chooseCareer, endTurn, resetGame, setState, marriageRoll };
 }

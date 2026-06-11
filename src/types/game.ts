@@ -276,7 +276,9 @@ export interface CareerChoiceContext {
 
 export type GamePhase =
   | "setup" | "playing" | "rolling"
-  | "show_result" | "event" | "choice" | "career_choice" | "goal";
+  | "show_result" | "event" | "choice" | "career_choice"
+  | "marriage_roulette" // 結婚ルーレット（確率判定）
+  | "goal";
 
 export interface GameState {
   phase:               GamePhase;
@@ -290,6 +292,7 @@ export interface GameState {
   finishedCount:       number;
   totalPlayers:        number;
   rollAgainFlag:       boolean;
+  marriageRoulette?:   { hasPartner: boolean }; // 結婚ルーレット中の確率情報
   _syncId?:            string;
 }
 
