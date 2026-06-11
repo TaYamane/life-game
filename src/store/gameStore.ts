@@ -23,6 +23,11 @@ function clamp(min: number, val: number, max: number) {
   return Math.max(min, Math.min(max, val));
 }
 
+/** 幸福上昇をほぼ半分に抑える（下降はそのまま） */
+function scaleHappy(val: number): number {
+  return val > 0 ? Math.round(val * 0.5) : val;
+}
+
 // 位置→年齢変換（playerProfile.ts と同一ロジック）
 function posToAge(position: number): number {
   if (position <= 14)  return Math.round((position / 14) * 5);              // 0〜5歳（乳幼児）
@@ -49,7 +54,12 @@ function makeHistoryEntry(event: GameEvent, turnCount: number, position: number,
   const e   = event.effect;
   const age = posToAge(position);
   if (event.isCallback)        return { emoji: "🔮", text: `【伏線回収】${event.title}`, turn: turnCount, age };
-  if (e.setJob && e.setJob !== "none") return { emoji: "💼", text: `${JOB_LABELS[e.setJob]}になった`, turn: turnCount, age };
+  if (e.setJob && e.setJob !== "none") {
+    const label = (e.setJob === "youtuber" || e.setJob === "artist")
+      ? `${JOB_LABELS[e.setJob]}を始めた（副業）`
+      : `${JOB_LABELS[e.setJob]}になった`;
+    return { emoji: "💼", text: label, turn: turnCount, age };
+  }
   if (e.marry)       return { emoji: "💒", text: "結婚した",         turn: turnCount, age };
   if (e.divorce)     return { emoji: "💔", text: "離婚した",         turn: turnCount, age };
   if (e.getPet)      return { emoji: "🐾", text: "ペットを迎えた",   turn: turnCount, age };
@@ -80,10 +90,18 @@ function applyEventEffect(player: Player, event: GameEvent): Player {
   if (e.moneyHalf) p.money = Math.floor(p.money / 2);
   else if (e.money !== undefined) p.money = p.money + e.money;  // マイナス可
 
-  if (e.happiness !== undefined) p.happiness = clamp(0, p.happiness + e.happiness, 100);
-  if (e.fame      !== undefined) p.fame      = clamp(0, p.fame      + e.fame,      100);
+  if (e.happiness !== undefined) p.happiness = clamp(0, p.happiness + scaleHappy(e.happiness), 100);
+  if (e.fame      !== undefined) p.fame      = clamp(0, p.fame      + e.fame,                  100);
 
-  if (e.setJob !== undefined) p.job = e.setJob;
+  // 副業判定: YouTuber/アーティストは既職業がある場合は副業扱い（主職は変えない）
+  if (e.setJob !== undefined) {
+    const isSideJob = (e.setJob === "youtuber" || e.setJob === "artist") && p.job !== "none";
+    if (isSideJob) {
+      p.flags = { ...p.flags, sideJob: e.setJob };
+    } else {
+      p.job = e.setJob;
+    }
+  }
   if (e.marry)       { p.isMarried = true;  p.gotMarried   = true; }
   if (e.divorce)     { p.isMarried = false; p.gotDivorced  = true; }
   if (e.getPet)      { p.hasPet = true;  p.hasPetEver = true; }
@@ -288,7 +306,7 @@ function gameReducer(state: GameState, action: Action): GameState {
           // 給与ボーナス：給与所得者のみ受取
           if (SALARY_JOBS.has(player.job)) {
             moneyDelta = rawAmount;
-            happyDelta = 5;
+            happyDelta = 2;
           } else {
             // 無職・自営・フリー・学生は収入なし
             moneyDelta = 0;
@@ -298,7 +316,7 @@ function gameReducer(state: GameState, action: Action): GameState {
           // 事業収益：起業家・フリーランス・クリエイターのみ
           if (BUSINESS_JOBS.has(player.job) || player.hasCompany) {
             moneyDelta = rawAmount;
-            happyDelta = 5;
+            happyDelta = 2;
           } else {
             moneyDelta = 0;
             happyDelta = 0;
@@ -609,7 +627,7 @@ function gameReducer(state: GameState, action: Action): GameState {
         ...player,
         job,
         money:       newMoney,
-        happiness:   clamp(0, player.happiness + bonus.happiness, 100),
+        happiness:   clamp(0, player.happiness + scaleHappy(bonus.happiness), 100),
         fame:        clamp(0, player.fame      + bonus.fame,      100),
         wentBankrupt:  newMoney < 0 ? true : player.wentBankrupt,
         peakMoney:     Math.max(player.peakMoney, newMoney),

@@ -13,9 +13,15 @@ interface Props {
 type TabType = "ranking" | "history" | "titles";
 type RankType = "money" | "happiness" | "overall";
 
+/** 資産スコア：2000万円 = 100点（借金はマイナスペナルティ） */
+function moneyScore(money: number): number {
+  if (money <= 0) return Math.max(-50, Math.round(money / 20)); // 借金はペナルティ
+  return Math.min(100, Math.round(money / 20)); // 2000万 = 100点
+}
+
 function overallScore(p: Player) {
-  // マイナス資産はスコアをそのまま減らす（借金はペナルティ）
-  return Math.round(p.money * 0.4 + p.happiness * 80 * 0.35 + p.fame * 80 * 0.25);
+  // 3指標すべて 0〜100 スケールで統一
+  return Math.round(moneyScore(p.money) * 0.4 + p.happiness * 0.35 + p.fame * 0.25);
 }
 
 // ---------- 人生年表タイムライン ----------
@@ -191,13 +197,20 @@ export function GoalScreen({ players, onReset }: Props) {
 
   function moneyLabel(m: number): string {
     if (m < 0) return `借金 ${Math.abs(m).toLocaleString()}万`;
-    return `${m.toLocaleString()}万`;
+    return `${m.toLocaleString()}万円`;
   }
 
   function scoreDisplay(p: Player) {
-    if (rankType === "money")     return { label: p.money < 0 ? "借金" : "資産", val: moneyLabel(p.money) };
+    if (rankType === "money") {
+      const score = moneyScore(p.money);
+      const raw   = moneyLabel(p.money);
+      return {
+        label: p.money < 0 ? "借金" : "資産スコア",
+        val:   p.money < 0 ? raw : `${score}点 (${raw})`,
+      };
+    }
     if (rankType === "happiness") return { label: "幸福度", val: `${p.happiness}/100` };
-    return { label: "総合スコア", val: overallScore(p).toLocaleString() };
+    return { label: "総合スコア", val: `${overallScore(p)}点` };
   }
 
   return (
