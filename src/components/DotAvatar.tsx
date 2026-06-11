@@ -14,8 +14,11 @@ export interface CharacterDNA {
 }
 
 const DNA_HAIR = ["#2a1808","#3d2010","#1a1a1a","#7B3A10","#c8a050","#2a1855","#5a3020"];
-const DNA_SKIN = ["#f8d4a0","#f4c28a","#f0bc80","#f2ca90","#e8b878"];
 const DNA_EYES = ["#1a1212","#2a1008","#1a2418","#201830"];
+
+// 肌色は固定（明るい・日本のアニメ調）
+// 見た目のバリエーションは髪色・目の色・髪型で出す
+const SKIN_COLOR = "#f5c98a";
 
 export function generateDNA(playerId: string): CharacterDNA {
   let h = 5381;
@@ -25,7 +28,7 @@ export function generateDNA(playerId: string): CharacterDNA {
   }
   return {
     hairColor: DNA_HAIR[h % DNA_HAIR.length],
-    skinTone:  DNA_SKIN[(h >> 4) % DNA_SKIN.length],
+    skinTone:  SKIN_COLOR,
     eyeColor:  DNA_EYES[(h >> 8) % DNA_EYES.length],
     hairStyle: ((h >> 12) % 3) as 0 | 1 | 2,
   };
