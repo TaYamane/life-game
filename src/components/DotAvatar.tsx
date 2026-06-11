@@ -69,16 +69,23 @@ function getExpression(happiness: number): Expression {
 // ============================================================
 function getJobBadge(job: JobType): string | null {
   const map: Partial<Record<JobType, string>> = {
-    salaryman:     "💼",
-    civil_servant: "💼",
-    engineer:      "💻",
-    artist:        "🎨",
-    entrepreneur:  "🎩",
-    doctor:        "🩺",
-    lawyer:        "⚖️",
-    youtuber:      "📹",
-    freelancer:    "🖥️",
-    part_time:     "🏷️",
+    salaryman:      "💼",
+    civil_servant:  "💼",
+    engineer:       "💻",
+    artist:         "🎨",
+    entrepreneur:   "🎩",
+    doctor:         "🩺",
+    lawyer:         "⚖️",
+    youtuber:       "📹",
+    freelancer:     "🖥️",
+    part_time:      "🏷️",
+    // 隠し職業
+    inventor:       "⚙️",
+    investor:       "💎",
+    astronaut:      "🚀",
+    pro_gamer:      "🎮",
+    shadow_ruler:   "👁️",
+    legendary_neet: "🛋️",
   };
   return map[job] ?? null;
 }

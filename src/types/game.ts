@@ -71,34 +71,55 @@ export interface AvatarCustomization {
 // ---------- 職業 ----------
 export type JobType =
   | "none" | "part_time" | "salaryman" | "civil_servant"
-  | "engineer" | "doctor" | "lawyer" | "youtuber" | "entrepreneur" | "freelancer" | "artist";
+  | "engineer" | "doctor" | "lawyer" | "youtuber" | "entrepreneur" | "freelancer" | "artist"
+  // ── 隠し職業（特定条件を満たしたプレイヤーのみ解放） ──
+  | "inventor"       // 発明家
+  | "investor"       // 投資家
+  | "astronaut"      // 宇宙飛行士
+  | "pro_gamer"      // プロゲーマー
+  | "shadow_ruler"   // 陰の支配者
+  | "legendary_neet";// 伝説のニート
 
 export const JOB_LABELS: Record<JobType, string> = {
-  none:          "無職",
-  part_time:     "アルバイト",
-  salaryman:     "会社員",
-  civil_servant: "公務員",
-  engineer:      "エンジニア",
-  doctor:        "医師",
-  lawyer:        "弁護士",
-  youtuber:      "YouTuber",
-  entrepreneur:  "経営者",
-  freelancer:    "フリーランス",
-  artist:        "アーティスト",
+  none:           "無職",
+  part_time:      "アルバイト",
+  salaryman:      "会社員",
+  civil_servant:  "公務員",
+  engineer:       "エンジニア",
+  doctor:         "医師",
+  lawyer:         "弁護士",
+  youtuber:       "YouTuber",
+  entrepreneur:   "経営者",
+  freelancer:     "フリーランス",
+  artist:         "アーティスト",
+  // 隠し職業
+  inventor:       "発明家",
+  investor:       "投資家",
+  astronaut:      "宇宙飛行士",
+  pro_gamer:      "プロゲーマー",
+  shadow_ruler:   "陰の支配者",
+  legendary_neet: "伝説のニート",
 };
 
 export const JOB_INCOME: Record<JobType, number> = {
-  none:           0,
-  part_time:     20,
-  salaryman:     50,
-  civil_servant: 45,
-  engineer:      80,
-  doctor:       150,
-  lawyer:       130,
-  youtuber:     200,
-  entrepreneur:   0,
-  freelancer:    60,
-  artist:        30,
+  none:            0,
+  part_time:      20,
+  salaryman:      50,
+  civil_servant:  45,
+  engineer:       80,
+  doctor:        150,
+  lawyer:        130,
+  youtuber:      200,
+  entrepreneur:    0,
+  freelancer:     60,
+  artist:         30,
+  // 隠し職業
+  inventor:      180,
+  investor:      300,
+  astronaut:     250,
+  pro_gamer:     120,
+  shadow_ruler:  500,
+  legendary_neet:  0,
 };
 
 // ---------- ライフステージ（位置ベース） ----------
