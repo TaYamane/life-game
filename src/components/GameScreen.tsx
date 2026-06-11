@@ -28,7 +28,8 @@ interface Props {
   onDismissEvent:   () => void;
   onMakeChoice?:    (optionId: string) => void;
   onChooseCareer?:  (job: JobType) => void;
-  onMarriageRoll?:  (value: number) => void;
+  onMarriageRoll?:    (value: number) => void;
+  onConfessionRoll?:  (value: number) => void;
   onEndTurn:        () => void;
   isMyTurn?:        boolean;
 }
@@ -258,7 +259,7 @@ function TurnResultBanner({ diceValue, player, onEndTurn, isMyTurn }: {
 // ============================================================
 // メインゲーム画面
 // ============================================================
-export function GameScreen({ state, onRollDice, onDismissEvent, onMakeChoice, onChooseCareer, onMarriageRoll, onEndTurn, isMyTurn = true }: Props) {
+export function GameScreen({ state, onRollDice, onDismissEvent, onMakeChoice, onChooseCareer, onMarriageRoll, onConfessionRoll, onEndTurn, isMyTurn = true }: Props) {
   const { players, currentPlayerIndex, phase, diceValue, currentEvent, currentChoice } = state;
 
   // プロフィールパネル（null = 非表示、player index = 表示）
@@ -355,11 +356,18 @@ export function GameScreen({ state, onRollDice, onDismissEvent, onMakeChoice, on
     onMarriageRoll?.(value);
   }, [isMyTurn, onMarriageRoll]);
 
+  // 告白ルーレット完了コールバック
+  const handleConfessionComplete = useCallback((value: number) => {
+    if (!isMyTurn) return;
+    onConfessionRoll?.(value);
+  }, [isMyTurn, onConfessionRoll]);
+
   // アニメーション中はモーダルを表示しない
   const showEventModal      = phase === "event"            && !isMoving;
   const showChoiceModal     = phase === "choice"           && !isMoving && !!currentChoice;
   const showCareerModal     = phase === "career_choice"    && !isMoving && !!state.currentCareerChoice;
-  const showMarriageRoulette = phase === "marriage_roulette" && !isMoving;
+  const showMarriageRoulette    = phase === "marriage_roulette"    && !isMoving;
+  const showConfessionRoulette  = phase === "confession_roulette"  && !isMoving;
   const showResultBanner    = phase === "show_result" && !isMoving;
   const showRoulette  = phase === "playing"  && isMyTurn;
   const isSpinning    = phase === "rolling"  && isMyTurn;
@@ -639,6 +647,74 @@ export function GameScreen({ state, onRollDice, onDismissEvent, onMakeChoice, on
                 style={{ color: "#4a3880", fontSize: 14, border: "2px solid #2a1060" }}
               >
                 ● {currentPlayer.name} が運命のルーレットを回しています…
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ===== 告白ルーレットモーダル ===== */}
+      {showConfessionRoulette && (
+        <div
+          className="absolute inset-0 z-40 flex flex-col"
+          style={{ background: "rgba(4,2,20,0.96)", overflowY: "auto" }}
+        >
+          <div className="flex flex-col items-center px-5 pt-8 pb-6 gap-4">
+            {/* タイトル */}
+            <div className="text-center">
+              <div style={{ fontSize: 44 }}>💌</div>
+              <div
+                className="font-bold retro-text mt-2"
+                style={{ color: "#ff88aa", fontSize: 18, letterSpacing: "0.08em" }}
+              >
+                告白ルーレット！
+              </div>
+              <div style={{ color: "#8070a0", fontSize: 12, marginTop: 4 }}>
+                デート回数：<span style={{ color: "#ffcc00", fontWeight: "bold" }}>
+                  {state.confessionRoulette?.dateCount ?? 0} 回
+                </span>
+              </div>
+              {/* 確率インジケーター */}
+              <div className="flex gap-1 justify-center mt-3">
+                {[1,2,3,4,5,6].map(n => {
+                  const threshold = state.confessionRoulette?.successThreshold ?? 1;
+                  const isSuccess = n <= threshold;
+                  return (
+                    <div
+                      key={n}
+                      style={{
+                        width: 28, height: 28,
+                        borderRadius: 4,
+                        background: isSuccess ? "#ff3377" : "#2a1060",
+                        border: isSuccess ? "2px solid #ff88aa" : "2px solid #3a2060",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        color: isSuccess ? "#fff" : "#4a3080",
+                        fontSize: 13, fontWeight: "bold",
+                        fontFamily: "'DotGothic16',monospace",
+                      }}
+                    >
+                      {n}
+                    </div>
+                  );
+                })}
+              </div>
+              <div style={{ color: "#4a3880", fontSize: 10, marginTop: 4 }}>
+                {(() => {
+                  const t = state.confessionRoulette?.successThreshold ?? 1;
+                  const d = state.confessionRoulette?.dateCount ?? 0;
+                  return `1〜${t} = 交際スタート！　${t+1}〜6 = フラれた${d === 0 ? "（デートが足りない…）" : ""}`;
+                })()}
+              </div>
+            </div>
+            {/* ルーレット */}
+            {isMyTurn ? (
+              <Roulette onComplete={handleConfessionComplete} />
+            ) : (
+              <div
+                className="w-full py-6 text-center font-bold retro-text anim-blink"
+                style={{ color: "#4a3880", fontSize: 14, border: "2px solid #2a1060" }}
+              >
+                ● {currentPlayer.name} が告白ルーレットを回しています…
               </div>
             )}
           </div>

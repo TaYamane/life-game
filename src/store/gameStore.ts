@@ -25,13 +25,15 @@ function clamp(min: number, val: number, max: number) {
 
 // 位置→年齢変換（playerProfile.ts と同一ロジック）
 function posToAge(position: number): number {
-  if (position <= 14)  return Math.round((position / 14) * 5);           // 0〜5歳（乳幼児）
+  if (position <= 14)  return Math.round((position / 14) * 5);              // 0〜5歳（乳幼児）
   if (position <= 25)  return 6  + Math.round(((position - 15) / 10) * 6); // 6〜12歳（小学生）
   if (position <= 39)  return 13 + Math.round(((position - 26) / 13) * 2); // 13〜15歳（中学〜高校）
-  if (position <= 69)  return 16 + Math.round(((position - 40)  / 29) * 6);
-  if (position <= 110) return 23 + Math.round(((position - 70)  / 40) * 12);
-  if (position <= 134) return 36 + Math.round(((position - 111) / 23) * 19);
-  return               56 + Math.round(((position - 135) / 15) * 9);
+  if (position <= 50)  return 16 + Math.round(((position - 40) / 10) * 2); // 16〜18歳（高校〜進路選択）
+  if (position <= 58)  return 18 + Math.round(((position - 50) / 8)  * 5); // 18〜23歳（大学〜就活）← pos58=23歳
+  if (position <= 69)  return 23 + Math.round(((position - 58) / 11) * 4); // 23〜27歳（社会人初期）
+  if (position <= 110) return 27 + Math.round(((position - 70) / 40) * 13);// 27〜40歳（社会人・結婚）
+  if (position <= 134) return 41 + Math.round(((position - 111) / 23) * 23);// 41〜64歳（壮年期）
+  return               65 + Math.round(((position - 135) / 15) * 20);       // 65〜85歳（老後）
 }
 
 function calcLifeStage(p: Player): LifeStage {
@@ -114,6 +116,11 @@ function applyEventEffect(player: Player, event: GameEvent): Player {
   if (event.isPositive) p.positiveEvents += 1;
   else                  p.negativeEvents  += 1;
 
+  // デートカウント: pos25〜64 の恋愛ポジティブイベント（告白前の交流）
+  if (event.category === "love" && event.isPositive && p.position >= 25 && p.position < 65) {
+    p.dates = (p.dates ?? 0) + 1;
+  }
+
   if (p.money > p.peakMoney) p.peakMoney = p.money;
   p.lifeStage = calcLifeStage(p);
 
@@ -165,7 +172,8 @@ type Action =
   | { type: "DISMISS_EVENT" }
   | { type: "MAKE_CHOICE"; optionId: string }
   | { type: "CHOOSE_CAREER"; job: JobType }
-  | { type: "MARRIAGE_ROLL"; value: number }  // 結婚ルーレット結果
+  | { type: "MARRIAGE_ROLL";    value: number }  // 結婚ルーレット結果
+  | { type: "CONFESSION_ROLL"; value: number }  // 告白ルーレット結果
   | { type: "END_TURN" }
   | { type: "RESET_GAME" }
   | { type: "SET_STATE"; state: GameState };
@@ -189,6 +197,7 @@ function makeInitialPlayer(id: number, name: string, avatar: Avatar, playerId?: 
     hasChildren:    false,
     flags:          {},
     firedCallbacks: [],
+    dates:          0,
     titles:         [],
     gotMarried:     false,
     gotDivorced:    false,
@@ -491,6 +500,22 @@ function gameReducer(state: GameState, action: Action): GameState {
         i === state.currentPlayerIndex ? updated : p
       );
 
+      // ── 告白選択（romanceChoice → confess）→ 告白ルーレットへ ──
+      if (choiceDef.flagKey === "romanceChoice" && option.id === "confess") {
+        const dateCount = updated.dates ?? 0;
+        // デート回数に応じた成功閾値（1〜5 / 6）
+        const successThreshold = Math.min(5, dateCount + 1);
+        return {
+          ...state,
+          phase:              "confession_roulette",
+          players:            updatedPlayers,
+          currentChoice:      null,
+          currentEvent:       null,
+          currentCareerChoice: null,
+          confessionRoulette: { successThreshold, dateCount },
+        };
+      }
+
       // ── 転職選択で「転職する」を選んだ場合はキャリア選択へ連鎖 ──
       if (choiceDef.flagKey === "transferChoice" && option.id === "transfer") {
         return {
@@ -690,6 +715,62 @@ function gameReducer(state: GameState, action: Action): GameState {
       };
     }
 
+    // ============================================================
+    // 告白ルーレット結果処理
+    // ============================================================
+    case "CONFESSION_ROLL": {
+      if (state.phase !== "confession_roulette") return state;
+
+      const player    = state.players[state.currentPlayerIndex];
+      const threshold = state.confessionRoulette?.successThreshold ?? 1;
+      const success   = action.value <= threshold;
+
+      // romanceChoice フラグを確定
+      const flagValue = success ? "confess" : "confess_fail";
+      const updatedPlayer: Player = {
+        ...player,
+        flags: { ...player.flags, romanceChoice: flagValue },
+      };
+      const updatedPlayers = state.players.map((p, i) =>
+        i === state.currentPlayerIndex ? updatedPlayer : p
+      );
+
+      const dateCount = state.confessionRoulette?.dateCount ?? 0;
+
+      const resultEvent: GameEvent = success ? {
+        id:         "confession_success",
+        category:   "love",
+        title:      "💕 付き合えた！！",
+        story:      dateCount >= 3
+          ? "重ねたデートがついに実を結んだ。「私も好き…ずっと言えなかった」という言葉に、胸が高鳴って止まらない。"
+          : "勇気を出した一言が奇跡を起こした。「うん、私も気になってた！」――世界が輝いて見える。",
+        result:     "交際スタート！ふたりの新しい物語が始まった。",
+        effect:     { happiness: 35 },
+        emoji:      "💑",
+        isPositive: true,
+      } : {
+        id:         "confession_fail",
+        category:   "love",
+        title:      dateCount >= 2 ? "💔 もう少しだったかも…" : "💔 フラれた…",
+        story:      dateCount >= 2
+          ? "一緒に過ごした時間は本物だったのに、一歩が届かなかった。「友達として大切にしたい」――前を向こう。"
+          : "勇気を出して告白したが「ごめん、友達としか思えない」という返事だった。しばらく辛い日々が続くかも。",
+        result:     "傷ついたけど大人に一歩近づいた。また新しい出会いがきっとある。",
+        effect:     { happiness: -15 },
+        emoji:      "😢",
+        isPositive: false,
+      };
+
+      return {
+        ...state,
+        phase:              "event",
+        players:            updatedPlayers,
+        currentEvent:       resultEvent,
+        currentChoice:      null,
+        confessionRoulette: undefined,
+      };
+    }
+
     case "END_TURN": {
       if (state.phase !== "show_result") return state;
 
@@ -740,7 +821,8 @@ export function useGameStore() {
   const endTurn      = useCallback(() => dispatch({ type: "END_TURN"   }), []);
   const resetGame    = useCallback(() => dispatch({ type: "RESET_GAME" }), []);
   const setState     = useCallback((s: GameState) => dispatch({ type: "SET_STATE", state: s }), []);
-  const marriageRoll = useCallback((value: number) => dispatch({ type: "MARRIAGE_ROLL", value }), []);
+  const marriageRoll    = useCallback((value: number) => dispatch({ type: "MARRIAGE_ROLL",    value }), []);
+  const confessionRoll  = useCallback((value: number) => dispatch({ type: "CONFESSION_ROLL",  value }), []);
 
-  return { state, startGame, rollDice, dismissEvent, makeChoice, chooseCareer, endTurn, resetGame, setState, marriageRoll };
+  return { state, startGame, rollDice, dismissEvent, makeChoice, chooseCareer, endTurn, resetGame, setState, marriageRoll, confessionRoll };
 }

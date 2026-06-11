@@ -6,11 +6,14 @@ import { JOB_LABELS } from "@/types/game";
 // ============================================================
 export function calcAge(position: number): number {
   if (position <= 14)  return Math.round((position / 14) * 5);
-  if (position <= 39)  return 6  + Math.round(((position - 15)  / 24) * 9);
-  if (position <= 69)  return 16 + Math.round(((position - 40)  / 29) * 6);
-  if (position <= 110) return 23 + Math.round(((position - 70)  / 40) * 12);
-  if (position <= 134) return 36 + Math.round(((position - 111) / 23) * 19);
-  return                      56 + Math.round(((position - 135) / 15) * 9);
+  if (position <= 25)  return 6  + Math.round(((position - 15) / 10) * 6); // 6〜12歳
+  if (position <= 39)  return 13 + Math.round(((position - 26) / 13) * 2); // 13〜15歳
+  if (position <= 50)  return 16 + Math.round(((position - 40) / 10) * 2); // 16〜18歳（高校）
+  if (position <= 58)  return 18 + Math.round(((position - 50) / 8)  * 5); // 18〜23歳（大学）
+  if (position <= 69)  return 23 + Math.round(((position - 58) / 11) * 4); // 23〜27歳
+  if (position <= 110) return 27 + Math.round(((position - 70) / 40) * 13);// 27〜40歳
+  if (position <= 134) return 41 + Math.round(((position - 111) / 23) * 23);// 41〜64歳
+  return               65 + Math.round(((position - 135) / 15) * 20);       // 65〜85歳
 }
 
 // ============================================================
@@ -48,26 +51,26 @@ export function getAgePhrase(player: Player): string {
     return `${age}歳 高校${grade}年生`;
   }
 
-  // 18〜22歳 — 進路フラグで分岐
-  if (age <= 22) {
+  // 18〜23歳 — 進路フラグで分岐（大学は4年制のため23歳まで）
+  if (age <= 23) {
     const r = flags.lifeRoute;
     if (r === "work") {
       const yr = Math.max(1, age - 17);
       return `${age}歳 社会人${yr}年目`;
     }
     if (r === "vocational_school") {
-      // 専門学校は2年制（18歳→1年、19歳→2年、20歳以降→卒業・社会人）
-      const yr = age - 17;  // 18→1, 19→2
+      const yr = age - 17;
       if (yr <= 2) return `${age}歳 専門学校${yr}年生`;
       return `${age}歳 社会人${Math.max(1, age - 19)}年目`;
     }
     const yr = Math.max(1, age - 17);
-    return `${age}歳 大学${yr}年生`;
+    if (yr <= 4) return `${age}歳 大学${yr}年生`;
+    return `${age}歳 大学院生`;
   }
 
-  // 23〜26歳 — 社会人初期
-  if (age <= 26) {
-    const yr = Math.max(1, age - 22);
+  // 24〜28歳 — 社会人初期
+  if (age <= 28) {
+    const yr = Math.max(1, age - 23);
     return `${age}歳 社会人${yr}年目`;
   }
 

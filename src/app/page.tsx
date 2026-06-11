@@ -365,7 +365,7 @@ export default function Home() {
   const [isHost, setIsHost]             = useState(false);
   const hasInitOnline             = useRef(false); // 初回同期フラグ
 
-  const { state, startGame, rollDice, dismissEvent, makeChoice, chooseCareer, endTurn, resetGame, setState, marriageRoll } = useGameStore();
+  const { state, startGame, rollDice, dismissEvent, makeChoice, chooseCareer, endTurn, resetGame, setState, marriageRoll, confessionRoll } = useGameStore();
 
   // ── オンライン同期フック ──────────────────────────
   const handleRemoteState = useCallback((s: GameState) => {
@@ -512,6 +512,12 @@ export default function Home() {
     marriageRoll(value);
   }, [myPlayerId, marriageRoll]);
 
+  const onlineConfessionRoll = useCallback((value: number) => {
+    if (currentPlayerIdRef.current !== myPlayerId) return;
+    pendingSyncRef.current = true;
+    confessionRoll(value);
+  }, [myPlayerId, confessionRoll]);
+
   const onlineEndTurn = useCallback(() => {
     if (currentPlayerIdRef.current !== myPlayerId) return;
     pendingSyncRef.current = true;
@@ -565,6 +571,7 @@ export default function Home() {
         onMakeChoice={appPhase === "online_game" ? onlineMakeChoice : makeChoice}
         onChooseCareer={appPhase === "online_game" ? onlineChooseCareer : chooseCareer}
         onMarriageRoll={appPhase === "online_game" ? onlineMarriageRoll : marriageRoll}
+        onConfessionRoll={appPhase === "online_game" ? onlineConfessionRoll : confessionRoll}
         onEndTurn={appPhase === "online_game" ? onlineEndTurn : endTurn}
         isMyTurn={isMyTurn}
       />

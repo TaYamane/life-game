@@ -257,6 +257,9 @@ export interface Player {
   // 発火済みコールバックID（同一イベントの重複発生防止）
   firedCallbacks: string[];
 
+  // デート回数（pos25〜64 の恋愛ポジティブイベント数）
+  dates: number;
+
   // 称号フラグ
   titles:         string[];
   gotMarried:     boolean;
@@ -286,7 +289,8 @@ export interface CareerChoiceContext {
 export type GamePhase =
   | "setup" | "playing" | "rolling"
   | "show_result" | "event" | "choice" | "career_choice"
-  | "marriage_roulette" // 結婚ルーレット（確率判定）
+  | "marriage_roulette"    // 結婚ルーレット（確率判定）
+  | "confession_roulette"  // 告白ルーレット（デート回数で確率変動）
   | "goal";
 
 export interface GameState {
@@ -301,7 +305,8 @@ export interface GameState {
   finishedCount:       number;
   totalPlayers:        number;
   rollAgainFlag:       boolean;
-  marriageRoulette?:   { hasPartner: boolean }; // 結婚ルーレット中の確率情報
+  marriageRoulette?:   { hasPartner: boolean };
+  confessionRoulette?: { successThreshold: number; dateCount: number }; // 告白ルーレット
   _syncId?:            string;
 }
 
