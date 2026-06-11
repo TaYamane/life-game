@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from "react";
 import type { GameEvent, Player } from "@/types/game";
 import { CATEGORY_INFO, JOB_LABELS, AVATAR_COLORS } from "@/types/game";
-import { PixelCharacter } from "./PixelCharacter";
+import { DotAvatar } from "./DotAvatar";
 
 interface Props {
   event:     GameEvent;
@@ -204,12 +204,7 @@ function SceneFrame({
         marginBottom: 4,
         filter: `drop-shadow(0 4px 8px rgba(0,0,0,0.6))`,
       }}>
-        <PixelCharacter
-          lifeStage={player.lifeStage}
-          color={color.bg}
-          darkColor={color.border}
-          size={60}
-        />
+        <DotAvatar player={player} size={60} shadow />
       </div>
     </div>
   );

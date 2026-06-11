@@ -10,7 +10,7 @@ import { ChoiceModal } from "./ChoiceModal";
 import { CareerModal } from "./CareerModal";
 import { PlayerProfile } from "./PlayerProfile";
 import { Roulette } from "./Roulette";
-import { PixelCharacter } from "./PixelCharacter";
+import { DotAvatar } from "./DotAvatar";
 
 // お金フォーマット（億/万/円）
 function formatMoney(m: number): string {
@@ -80,7 +80,7 @@ function PlayerMiniCard({ player, isActive, displayPos, onProfileOpen }: {
           display: "flex", alignItems: "flex-end", justifyContent: "center",
           filter: isActive ? `drop-shadow(0 0 4px ${color.bg})` : undefined,
         }}>
-          <PixelCharacter lifeStage={player.lifeStage} color={color.bg} darkColor={color.border} size={22} />
+          <DotAvatar player={player} size={22} />
         </div>
         {/* プロフィールボタン（右上） — タッチターゲット拡大 */}
         <button
@@ -460,13 +460,7 @@ export function GameScreen({ state, onRollDice, onDismissEvent, onMakeChoice, on
               boxShadow: `0 0 10px ${colorInfo.bg}55, 2px 2px 0 #000`,
               overflow: "hidden",
             }}>
-              <PixelCharacter
-                lifeStage={currentPlayer.lifeStage}
-                color={colorInfo.bg}
-                darkColor={colorInfo.border}
-                size={32}
-                shadow
-              />
+              <DotAvatar player={currentPlayer} size={32} shadow />
             </div>
 
             <div className="flex-1 min-w-0">

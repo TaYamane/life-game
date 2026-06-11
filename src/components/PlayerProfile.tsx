@@ -2,7 +2,7 @@
 import type { Player } from "@/types/game";
 import { AVATAR_COLORS, JOB_LABELS } from "@/types/game";
 import { calcAge, getAgePhrase, calcHealthScore, getChoiceHistory } from "@/utils/playerProfile";
-import { PixelCharacter } from "./PixelCharacter";
+import { DotAvatar } from "./DotAvatar";
 
 interface Props {
   player:   Player;
@@ -141,7 +141,7 @@ export function PlayerProfile({ player, onClose }: Props) {
               display: "flex", alignItems: "flex-end", justifyContent: "center",
               filter: `drop-shadow(0 0 6px ${color.bg})`,
             }}>
-              <PixelCharacter lifeStage={player.lifeStage} color={color.bg} darkColor={color.border} size={36} />
+              <DotAvatar player={player} size={36} shadow />
             </div>
 
             {/* 名前 + 年齢 */}

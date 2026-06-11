@@ -3,6 +3,7 @@ import { useState } from "react";
 import type { Player } from "@/types/game";
 import { AVATAR_COLORS, LIFE_STAGE_INFO, JOB_LABELS } from "@/types/game";
 import { getTitleDef } from "@/utils/titles";
+import { DotAvatar } from "./DotAvatar";
 
 interface Props {
   players:  Player[];
@@ -51,9 +52,8 @@ function LifeTimeline({ player }: { player: Player }) {
       {/* ヘッダー */}
       <div className="flex items-center gap-2 mb-3 pb-2"
         style={{ borderBottom: `1px solid ${ci.bg}33` }}>
-        <div className="flex items-center justify-center text-base rounded-sm flex-shrink-0"
-          style={{ width: 30, height: 30, backgroundColor: ci.bg, border: `2px solid ${ci.border}` }}>
-          {player.avatar.emoji}
+        <div className="flex-shrink-0" style={{ width: 30, height: 30 }}>
+          <DotAvatar player={player} size={26} />
         </div>
         <div>
           <span className="font-bold retro-text" style={{ color: ci.bg, fontSize: 13 }}>
@@ -137,9 +137,8 @@ function RankCard({ player, rank, label, score, isFirst }: {
       }}
     >
       <span className="text-2xl w-8 text-center flex-shrink-0">{MEDALS[rank]}</span>
-      <div className="flex items-center justify-center text-xl rounded-sm flex-shrink-0"
-        style={{ width: 38, height: 38, backgroundColor: ci.bg, border: `2px solid ${ci.border}` }}>
-        {player.avatar.emoji}
+      <div className="flex-shrink-0" style={{ width: 38, height: 38 }}>
+        <DotAvatar player={player} size={32} />
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1">
@@ -251,7 +250,7 @@ export function GoalScreen({ players, onReset }: Props) {
                     border: "3px solid var(--color-gold)",
                     boxShadow: "0 0 12px var(--color-gold)",
                   }}>
-                  {ranked[0].avatar.emoji}
+                  <DotAvatar player={ranked[0]} size={40} />
                 </div>
                 <div className="text-left">
                   <div className="font-bold retro-text" style={{ color: "var(--color-gold)", fontSize: 18 }}>
@@ -315,9 +314,8 @@ export function GoalScreen({ players, onReset }: Props) {
                 <div key={p.id} className="p-3 rounded mb-3"
                   style={{ background: "#08041a", border: `2px solid ${ci.bg}44` }}>
                   <div className="flex items-center gap-2 mb-2">
-                    <div className="flex items-center justify-center text-base rounded-sm"
-                      style={{ width: 26, height: 26, backgroundColor: ci.bg }}>
-                      {p.avatar.emoji}
+                    <div style={{ width: 26, height: 26 }}>
+                      <DotAvatar player={p} size={22} />
                     </div>
                     <span className="font-bold" style={{ color: ci.bg, fontSize: 12 }}>{p.name}</span>
                   </div>

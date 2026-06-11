@@ -3,6 +3,7 @@ import { useRef, useEffect } from "react";
 import { BOARD_SQUARES, TOTAL_SQUARES, getSquareIdAtGrid, getZoneForRow } from "@/data/board";
 import type { Player, ZoneType } from "@/types/game";
 import { AVATAR_COLORS } from "@/types/game";
+import { DotAvatarToken } from "./DotAvatar";
 
 interface Props {
   players:            Player[];
@@ -362,49 +363,30 @@ function ZoneIllustration({ zone }: { zone: ZoneType }) {
 // プレイヤーコマ（大きめ・見やすい）
 // ============================================================
 function PlayerPiece({ player, isActive, isLanding }: { player: Player; isActive: boolean; isLanding: boolean }) {
-  const c = AVATAR_COLORS[player.avatar.color];
-  const size = isActive ? 22 : 14;
+  const c    = AVATAR_COLORS[player.avatar.color];
+  const size = isActive ? 24 : 16;
   return (
-    <div style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "center" }}>
+    <div
+      className={isLanding ? "anim-piece-land" : isActive ? "anim-piece-hop" : ""}
+      style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "center" }}
+      title={player.name}
+    >
       {/* アクティブプレイヤーの発光リング */}
       {isActive && (
         <div
           className="anim-square-pulse"
           style={{
             position: "absolute",
-            width: size + 10,
-            height: size + 10,
+            width: size + 8,
+            height: size + 8,
             borderRadius: "50%",
             border: `2px solid ${c.bg}`,
-            opacity: 0.6,
+            opacity: 0.7,
             pointerEvents: "none",
           }}
         />
       )}
-      <div
-        className={isLanding ? "anim-piece-land" : isActive ? "anim-piece-hop" : ""}
-        title={player.name}
-        style={{
-          width: size,
-          height: size,
-          backgroundColor: c.bg,
-          border: isActive ? `3px solid #fff` : `2px solid ${c.border}`,
-          borderRadius: "50%",
-          flexShrink: 0,
-          boxShadow: isActive
-            ? `0 0 14px ${c.bg}, 0 0 6px ${c.bg}, 0 0 3px #fff, 0 2px 4px rgba(0,0,0,0.8)`
-            : `0 2px 4px rgba(0,0,0,0.5)`,
-          zIndex: 5,
-          fontSize: isActive ? 10 : 7,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          color: "#fff",
-          fontWeight: "bold",
-        }}
-      >
-        {isActive && <span style={{ fontSize: 10, lineHeight: 1 }}>{player.avatar.emoji}</span>}
-      </div>
+      <DotAvatarToken player={player} size={size} isActive={isActive} />
     </div>
   );
 }
