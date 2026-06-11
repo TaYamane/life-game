@@ -122,7 +122,9 @@ export function selectWeightedEvent(pool: GameEvent[], player: Player): GameEven
   }
 
   // ── Level 3: 位置条件のみクリア（状態系ハード条件を無視）──
+  // ※ isUnique/isCallback の firedCallbacks チェックは Level 3 でも必ず行う
   const posMatch = pool.filter(e => {
+    if ((e.isCallback || e.isUnique) && (player.firedCallbacks ?? []).includes(e.id)) return false;
     const c = e.conditions;
     if (!c) return true;
     if (c.minPosition !== undefined && player.position < c.minPosition) return false;
@@ -137,11 +139,17 @@ export function selectWeightedEvent(pool: GameEvent[], player: Player): GameEven
   }
 
   // ── Level 4: 完全最終手段（発生してはいけない状況）──
+  // isUnique/isCallback は Level 4 でも除外
   console.error(
     `[eventSelector] Level-4 emergency fallback for player=${player.name} pos=${player.position}` +
     ` — check event conditions!`
   );
-  return pool[Math.floor(Math.random() * pool.length)];
+  const safePool = pool.filter(e =>
+    !((e.isCallback || e.isUnique) && (player.firedCallbacks ?? []).includes(e.id))
+  );
+  return safePool.length > 0
+    ? safePool[Math.floor(Math.random() * safePool.length)]
+    : pool[Math.floor(Math.random() * pool.length)];
 }
 
 /**

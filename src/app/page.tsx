@@ -18,6 +18,32 @@ function getOrCreatePlayerId(): string {
   return id;
 }
 
+// ── ゲームセーブ / ロード ──────────────────────────────
+const SAVE_KEY = "life-game-save";
+
+interface SaveData {
+  appPhase: "offline_game";
+  state: GameState;
+}
+
+function loadSaveData(): SaveData | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (!raw) return null;
+    const data = JSON.parse(raw) as SaveData;
+    if (data.appPhase !== "offline_game") return null;
+    if (!data.state || data.state.phase === "setup" || data.state.phase === "goal") return null;
+    return data;
+  } catch {
+    return null;
+  }
+}
+
+function clearSaveData(): void {
+  if (typeof window !== "undefined") localStorage.removeItem(SAVE_KEY);
+}
+
 // ── タイトル画面 ──────────────────────────────────────
 const TITLE_STARS = [
   { x: "8%",  y: "12%", size: 2, color: "#ffcc00", delay: "0s",    dur: "2.1s" },
@@ -32,7 +58,12 @@ const TITLE_STARS = [
   { x: "60%", y: "78%", size: 1, color: "#cc44ff", delay: "0.9s",  dur: "2.7s" },
 ];
 
-function TitleScreen({ onOffline, onOnline }: { onOffline: () => void; onOnline: () => void }) {
+function TitleScreen({ onOffline, onOnline, onResume, hasSavedGame }: {
+  onOffline: () => void;
+  onOnline: () => void;
+  onResume?: () => void;
+  hasSavedGame?: boolean;
+}) {
   return (
     <div
       className="flex flex-col items-center justify-center overflow-hidden scanlines relative"
@@ -84,6 +115,18 @@ function TitleScreen({ onOffline, onOnline }: { onOffline: () => void; onOnline:
 
       {/* ボタン */}
       <div className="w-full px-6 space-y-4 max-w-sm relative z-10">
+        {hasSavedGame && onResume && (
+          <button onClick={onResume}
+            className="btn-retro w-full py-5 font-bold retro-text text-xl tracking-wider"
+            style={{
+              background: "#001a00",
+              color: "var(--color-green)",
+              border: "3px solid var(--color-green)",
+              boxShadow: "3px 3px 0 #005500, 0 0 14px rgba(0,232,100,0.25)",
+            }}>
+            ▶ 続きから遊ぶ
+          </button>
+        )}
         <button onClick={onOffline}
           className="btn-retro w-full py-5 font-bold retro-text text-xl tracking-wider"
           style={{
@@ -133,6 +176,7 @@ function TitleScreen({ onOffline, onOnline }: { onOffline: () => void; onOnline:
 type AppPhase = "title" | "offline_setup" | "offline_game" | "online_lobby" | "online_game";
 
 export default function Home() {
+  const [savedGame]               = useState<SaveData | null>(loadSaveData);
   const [appPhase, setAppPhase]   = useState<AppPhase>("title");
   const [myPlayerId]              = useState(getOrCreatePlayerId);
   const [roomId, setRoomId]       = useState<string | null>(null);
@@ -211,9 +255,26 @@ export default function Home() {
     setAppPhase("online_game");
   }, [startGame, setState]);
 
-  // ── リセット ──────────────────────────────────────
+  // ── オフラインゲーム状態をlocalStorageに自動セーブ ──
+  useEffect(() => {
+    if (appPhase !== "offline_game") return;
+    if (state.phase === "setup" || state.phase === "goal") return;
+    try {
+      localStorage.setItem(SAVE_KEY, JSON.stringify({ appPhase, state }));
+    } catch { /* quota exceeded 等は無視 */ }
+  }, [state, appPhase]);
+
+  // ── 続きから再開 ──────────────────────────────────
+  const handleResume = useCallback(() => {
+    if (!savedGame) return;
+    setState(savedGame.state);
+    setAppPhase("offline_game");
+  }, [savedGame, setState]);
+
+  // ── リセット（セーブデータも削除）────────────────
   const handleReset = useCallback(() => {
     resetGame();
+    clearSaveData();
     setAppPhase("title");
     setRoomId(null);
     setIsHost(false);
@@ -268,6 +329,8 @@ export default function Home() {
       <TitleScreen
         onOffline={() => setAppPhase("offline_setup")}
         onOnline={() => setAppPhase("online_lobby")}
+        onResume={handleResume}
+        hasSavedGame={!!savedGame}
       />
     );
   }
@@ -314,6 +377,8 @@ export default function Home() {
     <TitleScreen
       onOffline={() => setAppPhase("offline_setup")}
       onOnline={() => setAppPhase("online_lobby")}
+      onResume={handleResume}
+      hasSavedGame={!!savedGame}
     />
   );
 }

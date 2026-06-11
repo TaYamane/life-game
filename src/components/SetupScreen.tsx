@@ -240,14 +240,18 @@ export function SetupScreen({ onStart }: Props) {
             name={players[i].name}
             avatar={players[i].avatar}
             onNameChange={(name) => {
-              const next = [...players];
-              next[i] = { ...next[i], name };
-              setPlayers(next);
+              setPlayers(prev => {
+                const next = [...prev];
+                next[i] = { ...next[i], name };
+                return next;
+              });
             }}
             onAvatarChange={(avatar) => {
-              const next = [...players];
-              next[i] = { ...next[i], avatar };
-              setPlayers(next);
+              setPlayers(prev => {
+                const next = [...prev];
+                next[i] = { ...next[i], avatar };
+                return next;
+              });
             }}
           />
         ))}

@@ -25,8 +25,9 @@ function clamp(min: number, val: number, max: number) {
 
 // 位置→年齢変換（playerProfile.ts と同一ロジック）
 function posToAge(position: number): number {
-  if (position <= 14)  return Math.round((position / 14) * 5);
-  if (position <= 39)  return 6  + Math.round(((position - 15)  / 24) * 9);
+  if (position <= 14)  return Math.round((position / 14) * 5);           // 0〜5歳（乳幼児）
+  if (position <= 25)  return 6  + Math.round(((position - 15) / 10) * 6); // 6〜12歳（小学生）
+  if (position <= 39)  return 13 + Math.round(((position - 26) / 13) * 2); // 13〜15歳（中学〜高校）
   if (position <= 69)  return 16 + Math.round(((position - 40)  / 29) * 6);
   if (position <= 110) return 23 + Math.round(((position - 70)  / 40) * 12);
   if (position <= 134) return 36 + Math.round(((position - 111) / 23) * 19);
@@ -357,7 +358,8 @@ function gameReducer(state: GameState, action: Action): GameState {
       if (!hasFinished) {
         if (square.type === "event") {
           const preferred = square.preferredCategory;
-          if (preferred && Math.random() < 0.65) {
+          if (preferred) {
+            // preferredCategory が設定されているマスは必ずそのカテゴリから選択
             const pool = EVENT_CARDS.filter(e => e.category === preferred);
             event = pool.length > 0
               ? selectWeightedEvent(pool, updatedPlayer)
