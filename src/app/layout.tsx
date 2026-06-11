@@ -9,9 +9,42 @@ const dotGothic = DotGothic16({
   display: "swap",
 });
 
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "https://pixel-life.vercel.app";
+
 export const metadata: Metadata = {
-  title: "PIXEL LIFE (仮)",
-  description: "スマホ専用！友達と通話しながら遊ぶボードゲーム",
+  metadataBase: new URL(BASE_URL),
+
+  title: "PIXEL LIFE",
+  description: "人生を歩み、選択し、幸せ・資産・名声を競う人生シミュレーションゲーム",
+
+  openGraph: {
+    title: "PIXEL LIFE",
+    description: "人生を歩み、選択し、幸せ・資産・名声を競う人生シミュレーションゲーム",
+    url: BASE_URL,
+    siteName: "PIXEL LIFE",
+    images: [
+      {
+        url: "/og-image.jpg",
+        width: 1200,
+        height: 630,
+        alt: "PIXEL LIFE - 人生を歩み、選択し、幸せ・資産・名声を競え！",
+      },
+    ],
+    locale: "ja_JP",
+    type: "website",
+  },
+
+  twitter: {
+    card: "summary_large_image",
+    title: "PIXEL LIFE",
+    description: "人生を歩み、選択し、幸せ・資産・名声を競う人生シミュレーションゲーム",
+    images: ["/og-image.jpg"],
+  },
+
+  icons: {
+    icon: "/favicon.ico",
+    apple: "/apple-touch-icon.png",
+  },
 };
 
 export const viewport: Viewport = {
