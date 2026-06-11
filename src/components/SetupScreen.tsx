@@ -183,7 +183,7 @@ export function SetupScreen({ onStart }: Props) {
             className="game-text text-xl"
             style={{ color: "var(--color-gold)" }}
           >
-            ドキドキ人生冒険ゲーム
+            PIXEL LIFE (仮)
           </h1>
         </div>
         <p className="text-xs mt-1" style={{ color: "#9980cc" }}>

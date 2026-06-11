@@ -10,7 +10,7 @@ const dotGothic = DotGothic16({
 });
 
 export const metadata: Metadata = {
-  title: "ドキドキ人生冒険ゲーム",
+  title: "PIXEL LIFE (仮)",
   description: "スマホ専用！友達と通話しながら遊ぶボードゲーム",
 };
 

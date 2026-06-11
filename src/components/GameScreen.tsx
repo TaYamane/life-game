@@ -61,12 +61,16 @@ function PlayerMiniCard({ player, isActive, displayPos, onProfileOpen }: {
     <div
       className="flex flex-col items-center flex-shrink-0"
       style={{
-        backgroundColor: isActive ? color.bg + "22" : "transparent",
+        backgroundColor: isActive ? color.bg + "28" : "transparent",
         border: isActive ? `2px solid ${color.bg}` : "2px solid transparent",
-        opacity: player.hasFinished ? 0.45 : 1,
-        borderRadius: 4,
+        boxShadow: isActive ? `0 0 10px ${color.bg}55, inset 0 0 8px ${color.bg}11` : "none",
+        opacity: player.hasFinished ? 0.4 : 1,
+        borderRadius: 5,
         minWidth: "var(--card-w)",
         padding: "var(--sp-1) var(--sp-1)",
+        transform: isActive ? "scale(1.05)" : "scale(1)",
+        transition: "transform 0.2s, box-shadow 0.2s",
+        zIndex: isActive ? 2 : 1,
       }}
     >
       {/* ピクセルキャラ＋プロフィールボタン */}

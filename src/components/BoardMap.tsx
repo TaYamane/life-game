@@ -12,19 +12,24 @@ interface Props {
 }
 
 // ============================================================
+// 強制停止マス（分岐マスの中でも特に重要なもの）
+// ============================================================
+const MANDATORY_STOP_IDS = new Set([35, 50, 58, 79, 90, 96, 118, 133, 142]);
+
+// ============================================================
 // ゾーン別ビジュアルテーマ
 // ============================================================
 const ZONE_THEME: Record<ZoneType, {
   sky: string; skyBottom: string; ground: string;
   road: string; roadEdge: string; stripe: string;
-  label: string; labelBg: string; labelColor: string;
+  label: string; labelBg: string; labelColor: string; emoji: string;
 }> = {
-  babyhood:   { sky:"#FFD6F0", skyBottom:"#FFAAD8", ground:"#A8E870", road:"#FF88BB", roadEdge:"#DD4488", stripe:"#fff",     label:"赤ちゃん〜幼稚園", labelBg:"#FF4499", labelColor:"#fff" },
-  schooldays: { sky:"#90D8FF", skyBottom:"#C8EEFF", ground:"#70C040", road:"#4488FF", roadEdge:"#1155DD", stripe:"#fff",     label:"小学生〜中学生",   labelBg:"#1166DD", labelColor:"#fff" },
-  youth:      { sky:"#FFE080", skyBottom:"#FFCC44", ground:"#88CC33", road:"#EE9900", roadEdge:"#BB6600", stripe:"#fff",     label:"高校〜大学・就職", labelBg:"#CC7700", labelColor:"#fff" },
-  adulting:   { sky:"#88AADD", skyBottom:"#BBCCEE", ground:"#445566", road:"#3355AA", roadEdge:"#112266", stripe:"#ffff44", label:"社会人・結婚",     labelBg:"#223388", labelColor:"#fff" },
-  midlife:    { sky:"#88EEBB", skyBottom:"#BBFFCC", ground:"#337744", road:"#228855", roadEdge:"#006633", stripe:"#fff",     label:"壮年期",           labelBg:"#116644", labelColor:"#fff" },
-  golden:     { sky:"#FFCC66", skyBottom:"#FF9944", ground:"#EEC860", road:"#DD8822", roadEdge:"#994400", stripe:"#fff",     label:"老後・引退",       labelBg:"#AA5500", labelColor:"#fff" },
+  babyhood:   { sky:"#FFD6F0", skyBottom:"#FFAAD8", ground:"#A8E870", road:"#FF88BB", roadEdge:"#DD4488", stripe:"#fff",     label:"赤ちゃん期",   labelBg:"#FF4499", labelColor:"#fff", emoji:"👶" },
+  schooldays: { sky:"#90D8FF", skyBottom:"#C8EEFF", ground:"#70C040", road:"#4488FF", roadEdge:"#1155DD", stripe:"#fff",     label:"学生時代",     labelBg:"#1166DD", labelColor:"#fff", emoji:"🏫" },
+  youth:      { sky:"#FFE080", skyBottom:"#FFCC44", ground:"#88CC33", road:"#EE9900", roadEdge:"#BB6600", stripe:"#fff",     label:"青春時代",     labelBg:"#CC7700", labelColor:"#fff", emoji:"🎒" },
+  adulting:   { sky:"#88AADD", skyBottom:"#BBCCEE", ground:"#445566", road:"#3355AA", roadEdge:"#112266", stripe:"#ffff44", label:"社会人・結婚", labelBg:"#223388", labelColor:"#fff", emoji:"💼" },
+  midlife:    { sky:"#88EEBB", skyBottom:"#BBFFCC", ground:"#337744", road:"#228855", roadEdge:"#006633", stripe:"#fff",     label:"壮年期",       labelBg:"#116644", labelColor:"#fff", emoji:"🏢" },
+  golden:     { sky:"#FFCC66", skyBottom:"#FF9944", ground:"#EEC860", road:"#DD8822", roadEdge:"#994400", stripe:"#fff",     label:"老後・引退",   labelBg:"#AA5500", labelColor:"#fff", emoji:"🌅" },
 };
 
 // ============================================================
@@ -34,7 +39,7 @@ function getSquareColors(sq: typeof BOARD_SQUARES[0]): { bg: string; border: str
   switch (sq.type) {
     case "start":       return { bg:"#FFD700", border:"#B8860B", glow:"#FFD700", text:"#4A3000" };
     case "goal":        return { bg:"#FFD700", border:"#B8860B", glow:"#FFD700", text:"#4A3000" };
-    case "choice":      return { bg:"#EE2244", border:"#AA0022", glow:"#FF6688", text:"#fff" };
+    case "choice":      return { bg:"#1a0e00", border:"#FFD700", glow:"#FFD700", text:"#FFD700" };
     case "money_plus":  return { bg:"#22DD66", border:"#009933", glow:"#00FF66", text:"#fff" };
     case "money_minus": return { bg:"#4488FF", border:"#1144DD", glow:"#88AAFF", text:"#fff" };
     case "chance":      return { bg:"#CC44FF", border:"#7700BB", glow:"#EE88FF", text:"#fff" };
@@ -56,7 +61,7 @@ function getSquareColors(sq: typeof BOARD_SQUARES[0]): { bg: string; border: str
 function getSquareIcon(sq: typeof BOARD_SQUARES[0]): string {
   if (sq.type === "start")       return "GO";
   if (sq.type === "goal")        return "🏆";
-  if (sq.type === "choice")      return "★";
+  if (sq.type === "choice")      return "⚡";
   if (sq.type === "money_plus")  return "★";
   if (sq.type === "money_minus") return "💧";
   if (sq.type === "chance")      return "?";
@@ -118,12 +123,16 @@ function ZonePanel({ zone, isFirst }: { zone: ZoneType; isFirst?: boolean }) {
           fontWeight:"bold",
           fontFamily:"'DotGothic16',monospace",
           letterSpacing:1,
-          boxShadow:`0 3px 10px rgba(0,0,0,0.3)`,
+          boxShadow:`0 3px 10px rgba(0,0,0,0.35), 0 0 12px ${t.labelBg}88`,
           whiteSpace:"nowrap",
-          border:`2px solid rgba(255,255,255,0.5)`,
+          border:`2px solid rgba(255,255,255,0.6)`,
           zIndex:3,
+          display:"flex",
+          alignItems:"center",
+          gap:5,
         }}>
-          {t.label}
+          <span>{t.emoji}</span>
+          <span>{t.label}</span>
         </div>
         {/* ゾーン別イラスト */}
         <ZoneIllustration zone={zone} />
@@ -354,25 +363,49 @@ function ZoneIllustration({ zone }: { zone: ZoneType }) {
 // ============================================================
 function PlayerPiece({ player, isActive, isLanding }: { player: Player; isActive: boolean; isLanding: boolean }) {
   const c = AVATAR_COLORS[player.avatar.color];
+  const size = isActive ? 22 : 14;
   return (
-    <div
-      className={isLanding ? "anim-piece-land" : isActive ? "anim-piece-hop" : ""}
-      title={player.name}
-      style={{
-        width: 16,
-        height: 16,
-        backgroundColor: c.bg,
-        border: `2.5px solid ${c.border}`,
-        borderRadius: "50%",
-        flexShrink: 0,
-        boxShadow: isActive
-          ? `0 0 8px ${c.bg}, 0 0 3px ${c.bg}, 0 2px 4px rgba(0,0,0,0.7)`
-          : `0 2px 4px rgba(0,0,0,0.5)`,
-        zIndex: 5,
-        outline: isActive ? `2px solid rgba(255,255,255,0.7)` : undefined,
-        outlineOffset: 1,
-      }}
-    />
+    <div style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      {/* アクティブプレイヤーの発光リング */}
+      {isActive && (
+        <div
+          className="anim-square-pulse"
+          style={{
+            position: "absolute",
+            width: size + 10,
+            height: size + 10,
+            borderRadius: "50%",
+            border: `2px solid ${c.bg}`,
+            opacity: 0.6,
+            pointerEvents: "none",
+          }}
+        />
+      )}
+      <div
+        className={isLanding ? "anim-piece-land" : isActive ? "anim-piece-hop" : ""}
+        title={player.name}
+        style={{
+          width: size,
+          height: size,
+          backgroundColor: c.bg,
+          border: isActive ? `3px solid #fff` : `2px solid ${c.border}`,
+          borderRadius: "50%",
+          flexShrink: 0,
+          boxShadow: isActive
+            ? `0 0 14px ${c.bg}, 0 0 6px ${c.bg}, 0 0 3px #fff, 0 2px 4px rgba(0,0,0,0.8)`
+            : `0 2px 4px rgba(0,0,0,0.5)`,
+          zIndex: 5,
+          fontSize: isActive ? 10 : 7,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          color: "#fff",
+          fontWeight: "bold",
+        }}
+      >
+        {isActive && <span style={{ fontSize: 10, lineHeight: 1 }}>{player.avatar.emoji}</span>}
+      </div>
+    </div>
   );
 }
 
@@ -389,17 +422,19 @@ function SquareTile({
   const sq = BOARD_SQUARES[squareId];
   if (!sq) return null;
 
-  const isLandmark  = squareId in LANDMARK_SQUARES;
-  const lm          = LANDMARK_SQUARES[squareId];
-  const col         = getSquareColors(sq);
-  const icon        = isLandmark ? lm.icon : getSquareIcon(sq);
-  const here        = players.filter((_, i) => displayPositions[i] === squareId);
-  const showAmt     = (sq.type === "money_plus" || sq.type === "money_minus") && sq.amount != null;
-  const isSpecial   = sq.type === "start" || sq.type === "goal";
+  const isLandmark   = squareId in LANDMARK_SQUARES;
+  const lm           = LANDMARK_SQUARES[squareId];
+  const col          = getSquareColors(sq);
+  const icon         = isLandmark ? lm.icon : getSquareIcon(sq);
+  const here         = players.filter((_, i) => displayPositions[i] === squareId);
+  const showAmt      = (sq.type === "money_plus" || sq.type === "money_minus") && sq.amount != null;
+  const isSpecial    = sq.type === "start" || sq.type === "goal";
+  const isChoice     = sq.type === "choice";
+  const isStopSquare = MANDATORY_STOP_IDS.has(squareId);
 
-  // マスサイズ（CSS変数でレスポンシブ化: 320px→22/27/34px, 430px+→30/38/44px）
-  const sizeVar    = isSpecial ? "var(--sq-special)" : isLandmark ? "var(--sq-lm)" : "var(--sq-normal)";
-  const iconFsVar  = isSpecial ? "var(--fs-md)"      : isLandmark ? "var(--fs-md)" : "var(--fs-xs)";
+  // choiceマス は特別サイズ
+  const sizeVar    = isSpecial ? "var(--sq-special)" : (isLandmark || isChoice) ? "var(--sq-lm)" : "var(--sq-normal)";
+  const iconFsVar  = isSpecial ? "var(--fs-md)"      : (isLandmark || isChoice) ? "var(--fs-md)" : "var(--fs-xs)";
   const amtFsVar   = "var(--fs-2xs)";
   const labelFsVar = "var(--fs-2xs)";
 
@@ -429,27 +464,40 @@ function SquareTile({
       )}
 
       {/* メインサークル */}
-      <div style={{
-        width:  sizeVar,
-        height: sizeVar,
-        borderRadius: "50%",
-        backgroundColor: isLandmark ? lm.bg : col.bg,
-        border: `${isLanding ? 3 : 2}px solid ${isLanding ? "#FFD700" : isLandmark ? "rgba(255,255,255,0.8)" : col.border}`,
-        boxShadow: isLanding
-          ? `0 0 16px #FFD700, 0 0 6px #FFD700, 0 2px 6px rgba(0,0,0,0.6)`
-          : isHighlight
-          ? `0 0 12px ${col.glow}, 0 2px 5px rgba(0,0,0,0.5)`
-          : `0 2px 5px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.3)`,
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        position: "relative",
-        flexShrink: 0,
-        transform: isHighlight || isLanding ? "scale(1.15)" : "scale(1)",
-        transition: "transform 0.2s, box-shadow 0.2s",
-        zIndex: 2,
-      }}>
+      <div
+        className={isHighlight ? "anim-square-pulse" : ""}
+        style={{
+          width:  sizeVar,
+          height: sizeVar,
+          borderRadius: "50%",
+          backgroundColor: isLandmark ? lm.bg : col.bg,
+          border: isHighlight
+            ? `3px solid #FFD700`
+            : isLanding
+            ? `3px solid #FFD700`
+            : isChoice
+            ? `2.5px solid #FFD700`
+            : isLandmark
+            ? `2px solid rgba(255,255,255,0.8)`
+            : `2px solid ${col.border}`,
+          boxShadow: isHighlight
+            ? `0 0 18px #FFD700, 0 0 8px #FFD700, 0 2px 6px rgba(0,0,0,0.7)`
+            : isLanding
+            ? `0 0 16px #FFD700, 0 0 6px #FFD700, 0 2px 6px rgba(0,0,0,0.6)`
+            : isChoice
+            ? `0 0 12px #FFD700aa, 0 0 5px #FFD70066, 0 2px 5px rgba(0,0,0,0.5)`
+            : `0 2px 5px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.3)`,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          position: "relative",
+          flexShrink: 0,
+          transform: isHighlight || isLanding ? "scale(1.2)" : isChoice ? "scale(1.08)" : "scale(1)",
+          transition: "transform 0.2s, box-shadow 0.2s",
+          zIndex: 2,
+        }}
+      >
         {/* 光沢 */}
         <div style={{
           position:"absolute", top:2, left:4, right:4, height:"36%",
@@ -494,7 +542,46 @@ function SquareTile({
         }}>
           {squareId}
         </div>
+
+        {/* STOPバッジ（強制停止マスのみ） */}
+        {isStopSquare && (
+          <div style={{
+            position: "absolute",
+            top: -7,
+            left: "50%",
+            transform: "translateX(-50%)",
+            background: "#FFD700",
+            color: "#1a0e00",
+            fontSize: 6,
+            fontWeight: "bold",
+            fontFamily: "'DotGothic16',monospace",
+            padding: "1px 4px",
+            borderRadius: 2,
+            letterSpacing: 1,
+            whiteSpace: "nowrap",
+            boxShadow: "0 0 6px #FFD700",
+            zIndex: 4,
+          }}>
+            STOP
+          </div>
+        )}
       </div>
+
+      {/* 分岐ラベル（choiceマス下） */}
+      {isChoice && !isLandmark && (
+        <div style={{
+          fontSize: "var(--fs-2xs)",
+          fontWeight: "bold",
+          color: "#FFD700",
+          fontFamily: "'DotGothic16',monospace",
+          marginTop: 2,
+          whiteSpace: "nowrap",
+          textShadow: "0 0 4px #FFD700",
+          lineHeight: 1,
+        }}>
+          分岐
+        </div>
+      )}
 
       {/* コマ表示 */}
       {here.length > 0 && (
@@ -586,26 +673,42 @@ function RoadRow({
         ))}
       </div>
 
-      {/* Uターン矢印 */}
+      {/* Uターン・進行方向表示 */}
       {!isLastRow && (
         <div style={{
-          height: 14,
-          background: `linear-gradient(90deg, ${t.ground}aa, ${t.ground}ff)`,
+          height: 20,
+          background: `linear-gradient(90deg, ${t.ground}bb, ${t.ground}ff)`,
           display: "flex",
           alignItems: "center",
           justifyContent: isEvenRow ? "flex-end" : "flex-start",
-          padding: "0 12px",
-          borderBottom: `2px solid rgba(0,0,0,0.15)`,
+          paddingLeft: isEvenRow ? 0 : 8,
+          paddingRight: isEvenRow ? 8 : 0,
+          borderBottom: `2px solid rgba(0,0,0,0.2)`,
+          gap: 4,
         }}>
-          {/* カーブ矢印 */}
-          <svg width={40} height={14} viewBox="0 0 40 14"
-            style={{ transform: isEvenRow ? undefined : "scaleX(-1)" }}>
+          {/* 進行方向テキスト */}
+          <span style={{
+            color: t.roadEdge,
+            fontSize: 9,
+            fontWeight: "bold",
+            fontFamily: "'DotGothic16',monospace",
+            opacity: 0.9,
+            order: isEvenRow ? 1 : 2,
+          }}>
+            {isEvenRow ? "▼" : "▼"}
+          </span>
+          {/* カーブ矢印SVG */}
+          <svg width={48} height={20} viewBox="0 0 48 20"
+            style={{
+              transform: isEvenRow ? undefined : "scaleX(-1)",
+              order: isEvenRow ? 2 : 1,
+            }}>
             <path
-              d={`M 4 2 Q 36 2 36 7 Q 36 12 4 12`}
-              fill="none" stroke={t.roadEdge} strokeWidth={3} strokeLinecap="round"
-              markerEnd="url(#arrow)"
+              d={`M 6 4 Q 42 4 42 10 Q 42 16 6 16`}
+              fill="none" stroke={t.roadEdge} strokeWidth={3.5} strokeLinecap="round"
             />
-            <polygon points="0,12 8,8 8,16" fill={t.roadEdge}/>
+            {/* 矢印頭 */}
+            <polygon points="0,16 10,10 10,22" fill={t.roadEdge}/>
           </svg>
         </div>
       )}
