@@ -10,15 +10,15 @@ interface Props {
 }
 
 const SEG_COLORS = [
-  "#ff2844", // 1
-  "#ff8c00", // 2
-  "#ffcc00", // 3
-  "#00e864", // 4
-  "#4488ff", // 5
-  "#cc44ff", // 6
+  "#8B5CF6", // 1 purple
+  "#EF4444", // 2 red
+  "#F59E0B", // 3 orange
+  "#FACC15", // 4 yellow
+  "#22C55E", // 5 green
+  "#3B82F6", // 6 blue
 ];
 
-const W = 230, CX = 115, CY = 115, R = 100, RI = 32;
+const W = 250, CX = 125, CY = 125, R = 98, RI = 30;
 
 function rad(deg: number) { return (deg - 90) * Math.PI / 180; }
 function pt(r: number, deg: number) {
@@ -87,29 +87,64 @@ export function Roulette({ onComplete }: Props) {
     <div className="flex flex-col items-center w-full gap-2">
 
       {/* ── ルーレットホイール ── */}
-      <div style={{ position: "relative", width: W, height: W + 20 }}>
+      <div style={{ position: "relative", width: W, height: W + 24 }}>
 
         {/* ポインター（上） */}
         <div style={{
           position: "absolute", top: 0, left: "50%",
           transform: "translateX(-50%)",
           width: 0, height: 0,
-          borderLeft: "12px solid transparent",
-          borderRight: "12px solid transparent",
-          borderTop: "24px solid var(--color-gold)",
+          borderLeft: "14px solid transparent",
+          borderRight: "14px solid transparent",
+          borderTop: "28px solid #FFD700",
           zIndex: 10,
-          filter: "drop-shadow(0 2px 6px rgba(255,204,0,0.6))",
+          filter: "drop-shadow(0 0 8px #FFD700) drop-shadow(0 2px 4px rgba(255,215,0,0.8))",
         }} />
 
-        <svg width={W} height={W} style={{ marginTop: 20 }}>
-          {/* 外枠リング */}
-          <circle cx={CX} cy={CY} r={R + 10} fill="none" stroke="#3a2060" strokeWidth={8} />
-          <circle cx={CX} cy={CY} r={R + 12} fill="none" stroke="var(--color-gold)" strokeWidth={3} />
+        <svg width={W} height={W} style={{ marginTop: 24, overflow: "visible" }}>
+          <defs>
+            {/* ゴールドグロー */}
+            <filter id="goldGlow" x="-30%" y="-30%" width="160%" height="160%">
+              <feGaussianBlur stdDeviation="4" result="blur" />
+              <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+            {/* セグメントの微光 */}
+            <filter id="segGlow" x="-5%" y="-5%" width="110%" height="110%">
+              <feGaussianBlur stdDeviation="1.5" result="blur" />
+              <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+          </defs>
 
-          {/* デコレーション dots */}
+          {/* 外枠：ネオンゴールドリング（3層） */}
+          {/* 最外層：ぼんやりグロー */}
+          <circle cx={CX} cy={CY} r={R + 16} fill="none"
+            stroke="rgba(255,215,0,0.25)" strokeWidth={18} />
+          {/* 中間：ダーク下地 */}
+          <circle cx={CX} cy={CY} r={R + 10} fill="#0d0830"
+            stroke="#1a0e40" strokeWidth={4} />
+          {/* メイン：太いゴールドリング */}
+          <circle cx={CX} cy={CY} r={R + 11} fill="none"
+            stroke="#FFD700" strokeWidth={10}
+            style={{ filter: "drop-shadow(0 0 6px #FFD700) drop-shadow(0 0 14px rgba(255,215,0,0.7))" }} />
+          {/* 内側ライン */}
+          <circle cx={CX} cy={CY} r={R + 1} fill="none"
+            stroke="rgba(255,215,0,0.5)" strokeWidth={1.5} />
+
+          {/* デコレーション dots（ゴールド） */}
           {[0,30,60,90,120,150,180,210,240,270,300,330].map(a => {
-            const p = pt(R + 6, a);
-            return <circle key={a} cx={p.x} cy={p.y} r={3} fill="var(--color-gold)" opacity={0.7} />;
+            const p = pt(R + 11, a);
+            return (
+              <circle key={a} cx={p.x} cy={p.y} r={3.5}
+                fill="#FFD700"
+                style={{ filter: "drop-shadow(0 0 3px #FFD700)" }} />
+            );
           })}
 
           {/* スピングループ */}
@@ -122,13 +157,17 @@ export function Roulette({ onComplete }: Props) {
           }}>
             {/* セクション */}
             {SEG_COLORS.map((col, i) => (
-              <path key={i} d={sectorPath(i)} fill={col} stroke="#000" strokeWidth={1.5} />
+              <path key={i} d={sectorPath(i)} fill={col}
+                stroke="rgba(0,0,0,0.3)" strokeWidth={1} />
             ))}
 
             {/* 区切り線（ゴールド） */}
             {[0,1,2,3,4,5].map(i => {
               const p1 = pt(RI, i * 60), p2 = pt(R, i * 60);
-              return <line key={i} x1={p1.x} y1={p1.y} x2={p2.x} y2={p2.y} stroke="rgba(0,0,0,0.5)" strokeWidth={2} />;
+              return (
+                <line key={i} x1={p1.x} y1={p1.y} x2={p2.x} y2={p2.y}
+                  stroke="rgba(255,215,0,0.6)" strokeWidth={2} />
+              );
             })}
 
             {/* 数字ラベル */}
@@ -136,21 +175,24 @@ export function Roulette({ onComplete }: Props) {
               const { x, y } = labelPos(i);
               return (
                 <g key={i}>
+                  {/* 黒のアウトライン（太め） */}
                   <text
                     x={x} y={y}
                     textAnchor="middle" dominantBaseline="middle"
-                    fontSize={22} fontWeight="bold"
-                    fontFamily="'DotGothic16', monospace"
-                    fill="#000" stroke="#000" strokeWidth={3} strokeLinejoin="round"
+                    fontSize={28} fontWeight="900"
+                    fontFamily="'Georgia', 'DotGothic16', serif"
+                    fill="none" stroke="#000" strokeWidth={5} strokeLinejoin="round"
                   >
                     {i + 1}
                   </text>
+                  {/* 白文字（メイン） */}
                   <text
                     x={x} y={y}
                     textAnchor="middle" dominantBaseline="middle"
-                    fontSize={22} fontWeight="bold"
-                    fontFamily="'DotGothic16', monospace"
-                    fill="#fff"
+                    fontSize={28} fontWeight="900"
+                    fontFamily="'Georgia', 'DotGothic16', serif"
+                    fill="#ffffff"
+                    style={{ filter: "drop-shadow(0 1px 3px rgba(0,0,0,0.8))" }}
                   >
                     {i + 1}
                   </text>
@@ -159,32 +201,30 @@ export function Roulette({ onComplete }: Props) {
             })}
           </g>
 
-          {/* センターハブ */}
-          <circle cx={CX} cy={CY} r={RI + 2} fill="#08041a" stroke="var(--color-gold)" strokeWidth={3} />
-          <circle cx={CX} cy={CY} r={RI - 2} fill="#120840" />
+          {/* センターハブ：黒ドーナツ＋ゴールドリング */}
+          {/* 外側ゴールドリング */}
+          <circle cx={CX} cy={CY} r={RI + 5} fill="#000000"
+            stroke="#FFD700" strokeWidth={4}
+            style={{ filter: "drop-shadow(0 0 6px rgba(255,215,0,0.8))" }} />
+          {/* 内側ダーク */}
+          <circle cx={CX} cy={CY} r={RI + 1} fill="#0a0820" />
+          {/* 中心ドット */}
+          <circle cx={CX} cy={CY} r={6} fill="#FFD700"
+            style={{ filter: "drop-shadow(0 0 4px #FFD700)" }} />
 
           {/* 結果表示（センター） */}
           {result ? (
             <text
               x={CX} y={CY}
               textAnchor="middle" dominantBaseline="middle"
-              fontSize={30} fontWeight="bold"
+              fontSize={22} fontWeight="bold"
               fontFamily="'DotGothic16', monospace"
               fill={color}
               style={{ filter: `drop-shadow(0 0 8px ${color})` }}
             >
               {result}
             </text>
-          ) : (
-            <text
-              x={CX} y={CY}
-              textAnchor="middle" dominantBaseline="middle"
-              fontSize={18} fill="#4a3080"
-              fontFamily="'DotGothic16', monospace"
-            >
-              ?
-            </text>
-          )}
+          ) : null}
         </svg>
       </div>
 
