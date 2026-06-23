@@ -3,7 +3,7 @@ import { useReducer, useCallback } from "react";
 import type {
   GameState, Player, Avatar, GameEvent,
   LifeStage, JobType, HistoryEntry, ChoiceSquare, ChoiceOption,
-  CareerTrigger,
+  CareerTrigger, AvatarCustomization,
 } from "@/types/game";
 import { JOB_LABELS } from "@/types/game";
 import { BOARD_SQUARES, TOTAL_SQUARES } from "@/data/board";
@@ -184,7 +184,7 @@ function getFirstMandatoryStop(from: number, to: number, player: Player): number
 // Actions
 // ============================================================
 type Action =
-  | { type: "START_GAME"; players: { name: string; avatar: Avatar; playerId?: string }[] }
+  | { type: "START_GAME"; players: { name: string; avatar: Avatar; customization?: AvatarCustomization; playerId?: string }[] }
   | { type: "ROLL_DICE" }
   | { type: "DICE_RESULT"; value: number }
   | { type: "DISMISS_EVENT" }
@@ -196,12 +196,13 @@ type Action =
   | { type: "RESET_GAME" }
   | { type: "SET_STATE"; state: GameState };
 
-function makeInitialPlayer(id: number, name: string, avatar: Avatar, playerId?: string): Player {
+function makeInitialPlayer(id: number, name: string, avatar: Avatar, customization?: AvatarCustomization, playerId?: string): Player {
   return {
     id,
     playerId: playerId ?? `local-${id}`,
     name,
     avatar,
+    customization,
     money:          STARTING_MONEY,
     happiness:      STARTING_HAPPINESS,
     fame:           STARTING_FAME,
@@ -253,7 +254,7 @@ function gameReducer(state: GameState, action: Action): GameState {
 
     case "START_GAME": {
       const players = action.players.map((p, i) =>
-        makeInitialPlayer(i, p.name, p.avatar, p.playerId)
+        makeInitialPlayer(i, p.name, p.avatar, p.customization, p.playerId)
       );
       return { ...createInitialState(), phase: "playing", players, totalPlayers: players.length };
     }
