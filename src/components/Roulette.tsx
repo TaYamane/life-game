@@ -173,12 +173,13 @@ export function Roulette({ onComplete }: Props) {
             {/* 数字ラベル */}
             {SEG_COLORS.map((_, i) => {
               const { x, y } = labelPos(i);
-              const angle = i * 60 + 30; // セグメント放射方向に回転
+              const angle = i * 60 + 30; // セグメント放射方向
               return (
-                <g key={i} transform={`rotate(${angle}, ${x}, ${y})`}>
+                // translate→rotate の順で適用（iOS Safari互換）
+                <g key={i} transform={`translate(${x}, ${y}) rotate(${angle})`}>
                   {/* 黒のアウトライン（太め） */}
                   <text
-                    x={x} y={y}
+                    x={0} y={0}
                     textAnchor="middle" dominantBaseline="middle"
                     fontSize={28} fontWeight="900"
                     fontFamily="'Georgia', 'DotGothic16', serif"
@@ -188,7 +189,7 @@ export function Roulette({ onComplete }: Props) {
                   </text>
                   {/* 白文字（メイン） */}
                   <text
-                    x={x} y={y}
+                    x={0} y={0}
                     textAnchor="middle" dominantBaseline="middle"
                     fontSize={28} fontWeight="900"
                     fontFamily="'Georgia', 'DotGothic16', serif"
