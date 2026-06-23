@@ -827,7 +827,7 @@ export function useGameStore() {
   const [state, dispatch] = useReducer(gameReducer, createInitialState());
 
   const startGame = useCallback(
-    (players: { name: string; avatar: Avatar; playerId?: string }[]) =>
+    (players: { name: string; avatar: Avatar; customization?: AvatarCustomization; playerId?: string }[]) =>
       dispatch({ type: "START_GAME", players }), []
   );
   const rollDice    = useCallback((value: number) => {
