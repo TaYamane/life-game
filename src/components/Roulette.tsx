@@ -173,8 +173,9 @@ export function Roulette({ onComplete }: Props) {
             {/* 数字ラベル */}
             {SEG_COLORS.map((_, i) => {
               const { x, y } = labelPos(i);
+              const angle = i * 60 + 30; // セグメント放射方向に回転
               return (
-                <g key={i}>
+                <g key={i} transform={`rotate(${angle}, ${x}, ${y})`}>
                   {/* 黒のアウトライン（太め） */}
                   <text
                     x={x} y={y}
