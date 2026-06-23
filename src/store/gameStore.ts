@@ -5,6 +5,7 @@ import type {
   LifeStage, JobType, HistoryEntry, ChoiceSquare, ChoiceOption,
   CareerTrigger, AvatarCustomization,
 } from "@/types/game";
+import type { AvatarConfig } from "@/types/avatar";
 import { JOB_LABELS } from "@/types/game";
 import { BOARD_SQUARES, TOTAL_SQUARES } from "@/data/board";
 import { CHOICE_SQUARES } from "@/data/choices";
@@ -184,7 +185,7 @@ function getFirstMandatoryStop(from: number, to: number, player: Player): number
 // Actions
 // ============================================================
 type Action =
-  | { type: "START_GAME"; players: { name: string; avatar: Avatar; customization?: AvatarCustomization; playerId?: string }[] }
+  | { type: "START_GAME"; players: { name: string; avatar: Avatar; customization?: AvatarCustomization; avatarConfig?: AvatarConfig; playerId?: string }[] }
   | { type: "ROLL_DICE" }
   | { type: "DICE_RESULT"; value: number }
   | { type: "DISMISS_EVENT" }
@@ -196,13 +197,17 @@ type Action =
   | { type: "RESET_GAME" }
   | { type: "SET_STATE"; state: GameState };
 
-function makeInitialPlayer(id: number, name: string, avatar: Avatar, customization?: AvatarCustomization, playerId?: string): Player {
+function makeInitialPlayer(
+  id: number, name: string, avatar: Avatar,
+  customization?: AvatarCustomization, avatarConfig?: AvatarConfig, playerId?: string
+): Player {
   return {
     id,
     playerId: playerId ?? `local-${id}`,
     name,
     avatar,
     customization,
+    avatarConfig,
     money:          STARTING_MONEY,
     happiness:      STARTING_HAPPINESS,
     fame:           STARTING_FAME,
@@ -254,7 +259,7 @@ function gameReducer(state: GameState, action: Action): GameState {
 
     case "START_GAME": {
       const players = action.players.map((p, i) =>
-        makeInitialPlayer(i, p.name, p.avatar, p.customization, p.playerId)
+        makeInitialPlayer(i, p.name, p.avatar, p.customization, p.avatarConfig, p.playerId)
       );
       return { ...createInitialState(), phase: "playing", players, totalPlayers: players.length };
     }
@@ -827,7 +832,7 @@ export function useGameStore() {
   const [state, dispatch] = useReducer(gameReducer, createInitialState());
 
   const startGame = useCallback(
-    (players: { name: string; avatar: Avatar; customization?: AvatarCustomization; playerId?: string }[]) =>
+    (players: { name: string; avatar: Avatar; customization?: AvatarCustomization; avatarConfig?: AvatarConfig; playerId?: string }[]) =>
       dispatch({ type: "START_GAME", players }), []
   );
   const rollDice    = useCallback((value: number) => {

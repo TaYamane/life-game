@@ -265,11 +265,15 @@ export interface HistoryEntry {
 }
 
 // ---------- プレイヤー ----------
+// AvatarConfig は src/types/avatar.ts で定義（循環依存を避けるため inline import）
+import type { AvatarConfig } from "@/types/avatar";
+
 export interface Player {
-  id:       number;
-  playerId: string;
-  name:     string;
-  avatar:   Avatar;
+  id:           number;
+  playerId:     string;
+  name:         string;
+  avatar:       Avatar;
+  avatarConfig?: AvatarConfig;  // 新アバタービルダーの設定（省略可）
 
   money:     number;
   happiness: number;
